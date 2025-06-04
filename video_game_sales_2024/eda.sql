@@ -179,5 +179,21 @@ GROUP BY title, developer, publisher
 ;
 
 -- Average critic score between 2000 and 2020
+SELECT ROUND(AVG(critic_score), 2) AS avg_critic_score
+FROM vg_2024
+WHERE release_date >= '2000-01-01' AND release_date <= '2020-12-31';
+
+SELECT 
+	  YEAR(release_date) AS release_year
+	, ROUND(AVG(critic_score), 2) AS avg_critic_score
+FROM vg_2024
+WHERE release_date >= '2000-01-01' AND release_date <= '2020-12-31'
+GROUP BY YEAR(release_date)
+ORDER BY release_year;
 
 -- Identify games whose last update is more than 3 years after their release date
+
+SELECT *
+FROM vg_2024
+WHERE last_update IS NOT NULL
+  AND last_update > DATEADD(year, 3, release_date)
