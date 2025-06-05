@@ -58,3 +58,12 @@ CREATE TABLE games (
 
 SELECT TOP (100) *
 FROM vg_2024;
+
+BULK INSERT del_later
+FROM 'C:\Users\Mary Huynh\Downloads\vgchartz-2024.csv'
+WITH (
+		  FIRSTROW = 2
+		, FIELDTERMINATOR = ','
+		, ROWTERMINATOR = '0x0A' -- Using '\n' did not work, so used the hex code for LF after checking in Notepadd++
+		, TABLOCK
+	 );
