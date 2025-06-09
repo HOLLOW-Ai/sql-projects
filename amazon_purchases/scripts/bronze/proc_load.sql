@@ -1,31 +1,38 @@
-BULK INSERT bronze.survey_response
-FROM 'C:\Users\Mary Huynh\Downloads\dataverse_files\survey.csv'
-WITH (
-		FIRSTROW = 2,
-		FIELDTERMINATOR = ',',
-		ROWTERMINATOR = '0x0A',
-		FORMAT = 'CSV' -- needed or else it will break up the data in the income column
-);
+CREATE OR ALTER PROCEDURE bronze.load_bronze
+AS
+BEGIN
 
-SELECT TOP (500) *
-FROM bronze.survey_response;
+	PRINT '====================';
+	PRINT 'Loading Bronze Layer';
+	PRINT '====================';
 
-TRUNCATE TABLE bronze.survey_response;
+	PRINT '>> Truncating Table: bronze.survey_response';
+	TRUNCATE TABLE bronze.survey_response;
 
-BULK INSERT bronze.amazon_purchases
-FROM 'C:\Users\Mary Huynh\Downloads\dataverse_files\amazon-purchases.csv'
-WITH (
-		FIRSTROW = 2,
-		FORMAT = 'CSV',
-		ROWTERMINATOR = '0x0A',
-		FIELDTERMINATOR = ','
-);
+	PRINT '>> Loading Data into Table: bronze.survey_response';
+	BULK INSERT bronze.survey_response
+	FROM 'C:\Users\Mary Huynh\Downloads\dataverse_files\survey.csv'
+	WITH (
+			FIRSTROW = 2,
+			FIELDTERMINATOR = ',',
+			ROWTERMINATOR = '0x0A',
+			FORMAT = 'CSV' -- needed or else it will break up the data in the income column
+		);
 
-SELECT TOP (500) *
-FROM bronze.amazon_purchases;
+	PRINT '>> Truncating Table: bronze.amazon_purchases';
+	TRUNCATE TABLE bronze.amazon_purchases;
 
-SELECT TOP (500) *
-FROM bronze.amazon_purchases
-WHERE shipping_address_state != 'NJ'
+	PRINT '>> Loading Data into Table: bronze.amazon_purchases';
+	BULK INSERT bronze.amazon_purchases
+	FROM 'C:\Users\Mary Huynh\Downloads\dataverse_files\amazon-purchases.csv'
+	WITH (
+			FIRSTROW = 2,
+			FORMAT = 'CSV',
+			ROWTERMINATOR = '0x0A',
+			FIELDTERMINATOR = ','
+		);
 
-TRUNCATE TABLE bronze.amazon_purchases;
+END
+
+EXEC bronze.load_bronze;
+
