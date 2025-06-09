@@ -74,7 +74,7 @@ SELECT DISTINCT
 FROM bronze.survey_response;
 
 SELECT DISTINCT
-	q_life_changes -- Multiple select, contains NULL
+	q_life_changes -- Multiple select, contains NULL -- should replace with 'BLANK' instead?
 FROM bronze.survey_response;
 
 SELECT DISTINCT
@@ -106,3 +106,51 @@ SELECT response_id
 FROM bronze.survey_response
 GROUP BY response_id
 HAVING COUNT(*) > 1
+
+SELECT *
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = N'amazon_purchases';
+
+SELECT *
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = N'survey_response';
+
+
+/*
+========================================================================
+Skeleton structure of other tables to create
+========================================================================
+*/
+
+DROP TABLE IF EXISTS silver.survey_questions;
+CREATE TABLE silver.survey_questions (
+	question_id INT NOT NULL	IDENTITY	PRIMARY KEY,
+	category NVARCHAR(50),
+	question NVARCHAR(255)
+);
+
+TRUNCATE TABLE silver.survey_questions;
+
+INSERT INTO silver.survey_questions (category, question)
+VALUES
+	('demographic', 'What is your age group?'),
+	('demographic', 'Are you of Spanish, Hispanic, or Latino origin?'),
+	('demographic', 'Choose one or more races that you consider yourself to be'),
+	('demographic', 'What is the highest level of education you have completed?'),
+	('demographic', 'What was your total household income before taxes during the past 12 months?'),
+	('demographic', 'How do you describe yourself?'),
+	('demographic', 'Which best describes your sexual orientation?'),
+	('demograhpic', 'In 2021, which U.S. State did you live in?'),
+	('household_use', 'How many people do you share your Amazon account with? i.e. how many people log in and make orders using your account?'),
+	('household_use', 'How many people are in your "household"?'),
+	('household_use', 'How often do you (+ anyone you share your account with) order deliveries from Amazon?'),
+	('personal', 'Do you or someone in your household or someone you share your Amazon account with smoke cigarettes regularly?'),
+	('personal', 'Do you or someone in your household or someone you share your Amazon account with smoke marijuana regularly?'),
+	('personal', 'Do you or someone in your household or someone you share your Amazon account with drink alcohol regularly?'),
+	('personal', 'Do you or someone in your household or someone you share your Amazon account with have diabetes?'),
+	('personal', 'Do you or someone in your household or someone you share your Amazon account with use a wheelchair?'),
+	('personal', 'In 2021 did you, or someone you share your Amazon account with, experience any of the following life changes?')
+;
+
+SELECT *
+FROM silver.survey_questions;
