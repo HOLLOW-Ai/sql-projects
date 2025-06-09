@@ -1,3 +1,13 @@
+CREATE DATABASE amazon;
+USE amazon;
+
+CREATE SCHEMA bronze;
+GO
+CREATE SCHEMA silver;
+GO
+CREATE SCHEMA gold;
+GO
+
 DROP TABLE IF EXISTS bronze.survey_response;
 CREATE TABLE bronze.survey_response (
 	response_id NVARCHAR(255) NOT NULL,
@@ -23,4 +33,16 @@ CREATE TABLE bronze.survey_response (
 	q_small_biz_use NVARCHAR(255) NULL,
 	q_census_use NVARCHAR(255) NULL,
 	q_research_society NVARCHAR(255) NULL
+);
+
+DROP TABLE IF EXISTS bronze.amazon_purchases;
+CREATE TABLE bronze.amazon_purchases (
+	order_date NVARCHAR(255) NULL,
+	purchase_price_per_unit NVARCHAR(255) NULL,
+	quantity NVARCHAR(255) NULL,
+	shipping_address_state NVARCHAR(255) NULL,
+	title NVARCHAR(255) NULL,
+	asin_isbn_product_code NVARCHAR(255) NULL,
+	category NVARCHAR(255) NULL,
+	response_id NVARCHAR(255) NOT NULL
 );
