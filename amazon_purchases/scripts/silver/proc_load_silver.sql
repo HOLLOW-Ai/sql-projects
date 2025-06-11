@@ -62,7 +62,7 @@ VALUES
 	(15, 'Some high school or less'),
 	(16, 'High school diploma or GED'),
 	(17, 'Bachelor''s degree'),
-	(18, 'Graduate or professional degree (MA, MS, MBA, PhD, JD, MD, DDS, etc'),
+	(18, 'Graduate or professional degree (MA, MS, MBA, PhD, JD, MD, DDS, etc)'),
 	(19, 'Prefer not to say'),
 	(20, 'Less than $25,000'),
 	(21, '$25,000 - $49,999'),
@@ -74,7 +74,7 @@ VALUES
 	(27, 'Female'),
 	(28, 'heterosexual (straight)'),
 	(29, 'LGBTQ+'),
-	(30, '1 (just me!'),
+	(30, '1 (just me!)'),
 	(31, '2'),
 	(32, '3'),
 	(33, '4+'),
@@ -292,6 +292,289 @@ FROM bronze.amazon_purchases
 WHERE title NOT LIKE '%20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] 00:00:00%'
 ;
 
-SELECT DISTINCT q_demos_state
+SELECT
+	  response_id
+	, q_demos_age_group
+	, q_demos_hispanic
+	, r.value AS race
+	, q_demos_education
+	, q_demos_income
+	, q_demos_gender
+	, q_demos_sexual_orientation
+	, q_demos_state
+	, q_amazon_use_howmany
+	, q_amazon_use_hh_size
+	, q_amazon_use_how_oft
+	, q_substance_cig_use
+	, q_substance_marij_use
+	, q_substance_alcohol_use
+	, q_personal_diabetes
+	, q_personal_wheelchair
+	, lc.value AS life_changes
 FROM bronze.survey_response
-ORDER BY q_demos_state;
+OUTER APPLY string_split(q_life_changes, ',') lc
+OUTER APPLY string_split (q_demos_race, ',') r
+ORDER BY response_id;
+
+SELECT
+	  response_id
+	, q_life_changes
+	, sd.value
+FROM bronze.survey_response
+OUTER APPLY string_split(q_life_changes, ',') sd
+ORDER BY response_id;
+
+SELECT
+	  response_id
+	, 1 AS q1
+	, q_demos_age_group
+	, CASE q_demos_age_group
+		WHEN '18 - 24 years' THEN 1
+		WHEN '25 - 34 years' THEN 2
+		WHEN '35 - 44 years' THEN 3
+		WHEN '45 - 54 years' THEN 4
+		WHEN '55 - 64 years' THEN 5
+		WHEN '65 and older' THEN 6
+		END AS age_id
+	, 2 AS q2
+	, q_demos_hispanic
+	, CASE q_demos_hispanic
+		WHEN 'Yes' THEN 7
+		WHEN 'No' THEN 8
+		END as hispanic_id
+	, 3 AS q3
+	, r.value AS race
+	, CASE r.value
+		WHEN 'White or Caucasian' THEN 9
+		WHEN 'Black or African American' THEN 10
+		WHEN 'American Indian/Native American or Alaska Native' THEN 11
+		WHEN 'Asian' THEN 12
+		WHEN 'Native Hawaiian or Other Pacific Islander' THEN 13
+		WHEN 'Other' THEN 14
+		END AS race_id
+	, q_demos_education
+	, q_demos_income
+	, q_demos_gender
+	, q_demos_sexual_orientation
+	, q_demos_state
+	, q_amazon_use_howmany
+	, q_amazon_use_hh_size
+	, q_amazon_use_how_oft
+	, q_substance_cig_use
+	, q_substance_marij_use
+	, q_substance_alcohol_use
+	, q_personal_diabetes
+	, q_personal_wheelchair
+	, lc.value AS life_changes
+FROM bronze.survey_response
+OUTER APPLY string_split(q_life_changes, ',') lc
+OUTER APPLY string_split (q_demos_race, ',') r
+ORDER BY response_id;
+
+
+-- Q1: Age
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_demos_age_group
+	, A.answer_text
+	, CONCAT(1, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_age_group = A.answer_text
+;
+
+-- Q2: Hispanic
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_demos_hispanic
+	, A.answer_text
+	, CONCAT(2, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_hispanic = A.answer_text
+;
+
+-- Q3: Race
+SELECT
+	  S.response_id
+	, A.answer_id
+	, R.value
+	, A.answer_text
+	, CONCAT(3, A.answer_id)
+FROM bronze.survey_response S
+OUTER APPLY string_split(S.q_demos_race, ',') R
+LEFT JOIN silver.answers A
+	ON R.value = A.answer_text
+;
+
+-- Q4: Education
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_demos_education
+	, A.answer_text
+	, CONCAT(4, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_education = A.answer_text
+;
+
+-- Q5: Income
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_demos_income
+	, A.answer_text
+	, CONCAT(5, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_income = A.answer_text
+;
+
+-- Q6: Gender
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_demos_gender
+	, A.answer_text
+	, CONCAT(6, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_gender = A.answer_text
+;
+
+-- Q7: Sexual Orientation
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_demos_sexual_orientation
+	, A.answer_text
+	, CONCAT(7, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_sexual_orientation = LOWER(A.answer_text)
+;
+
+-- Q8: State
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_demos_state
+	, A.answer_text
+	, CONCAT(8, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_state = A.answer_text
+;
+
+-- Q9: # sharing account
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_amazon_use_howmany
+	, A.answer_text
+	, CONCAT(9, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_amazon_use_howmany = A.answer_text
+;
+
+-- Q10: Household size
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_amazon_use_hh_size
+	, A.answer_text
+	, CONCAT(10, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_amazon_use_hh_size = A.answer_text
+;
+
+-- Q11: How often
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_amazon_use_how_oft
+	, A.answer_text
+	, CONCAT(11, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_amazon_use_how_oft = A.answer_text
+;
+
+
+-- Q12: Substance - Cigs
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_substance_cig_use
+	, A.answer_text
+	, CONCAT(12, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_substance_cig_use = A.answer_text
+;
+
+-- Q13: Substance - Marijuana
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_substance_marij_use
+	, A.answer_text
+	, CONCAT(13, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_substance_marij_use = A.answer_text
+;
+
+-- Q14: Substance - Alcohol
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_substance_alcohol_use
+	, A.answer_text
+	, CONCAT(14, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_substance_alcohol_use = A.answer_text
+;
+
+-- Q15: Diabetes
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_personal_diabetes
+	, A.answer_text
+	, CONCAT(15, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_personal_diabetes = A.answer_text
+;
+
+-- Q16: Wheelchair
+SELECT
+	  S.response_id
+	, A.answer_id
+	, S.q_personal_wheelchair
+	, A.answer_text
+	, CONCAT(16, A.answer_id)
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_personal_wheelchair = A.answer_text
+;
+
+-- Q17: Life Changes
+SELECT
+	  S.response_id
+	, A.answer_id
+	, L.value
+	, A.answer_text
+	, CONCAT(17, A.answer_id)
+FROM bronze.survey_response S
+OUTER APPLY string_split(S.q_life_changes, ',') L
+LEFT JOIN silver.answers A
+	ON L.value = A.answer_text
+;
