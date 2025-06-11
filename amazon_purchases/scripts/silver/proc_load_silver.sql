@@ -567,12 +567,27 @@ LEFT JOIN silver.answers A
 ;
 
 -- Q17: Life Changes
+-- Going to have for now that NULL = 999 for answer_id
 SELECT
 	  S.response_id
 	, A.answer_id
 	, L.value
 	, A.answer_text
-	, CONCAT(17, A.answer_id)
+	, CONCAT(17, COALESCE(A.answer_id, 000))
+FROM bronze.survey_response S
+OUTER APPLY string_split(S.q_life_changes, ',') L
+LEFT JOIN silver.answers A
+	ON L.value = A.answer_text
+;
+
+-- Q17: Life Changes
+-- Going to have for now that NULL = 999 for answer_id
+SELECT
+	  S.response_id
+	, A.answer_id
+	, L.value
+	, A.answer_text
+	, CONCAT(17, COALESCE(A.answer_id, 999))
 FROM bronze.survey_response S
 OUTER APPLY string_split(S.q_life_changes, ',') L
 LEFT JOIN silver.answers A
