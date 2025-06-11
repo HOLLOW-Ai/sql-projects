@@ -593,3 +593,204 @@ OUTER APPLY string_split(S.q_life_changes, ',') L
 LEFT JOIN silver.answers A
 	ON L.value = A.answer_text
 ;
+
+
+
+/*
+==============================================
+Insert: silver.user_answers
+==============================================
+*/
+
+-- Q1: Age
+WITH bigone AS (
+SELECT
+	  S.response_id
+	, 1 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_age_group = A.answer_text
+
+UNION ALL
+
+-- Q2: Hispanic
+SELECT
+	  S.response_id
+	, 2 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_hispanic = A.answer_text
+
+UNION ALL
+
+-- Q3: Race
+SELECT
+	  S.response_id
+	, 3 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+OUTER APPLY string_split(S.q_demos_race, ',') R
+LEFT JOIN silver.answers A
+	ON R.value = A.answer_text
+
+UNION ALL
+
+-- Q4: Education
+SELECT
+	  S.response_id
+	, 4 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_education = A.answer_text
+
+UNION ALL
+
+-- Q5: Income
+SELECT
+	  S.response_id
+	, 5 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_income = A.answer_text
+
+UNION ALL
+
+-- Q6: Gender
+SELECT
+	  S.response_id
+	, 6 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_gender = A.answer_text
+
+UNION ALL
+
+-- Q7: Sexual Orientation
+SELECT
+	  S.response_id
+	, 7 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_sexual_orientation = LOWER(A.answer_text)
+
+UNION ALL
+
+-- Q8: State
+SELECT
+	  S.response_id
+	, 8 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_demos_state = A.answer_text
+
+UNION ALL
+
+-- Q9: # sharing account
+SELECT
+	  S.response_id
+	, 9 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_amazon_use_howmany = A.answer_text
+
+UNION ALL
+
+-- Q10: Household size
+SELECT
+	  S.response_id
+	 , 10 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_amazon_use_hh_size = A.answer_text
+
+UNION ALL
+
+-- Q11: How often
+SELECT
+	  S.response_id
+	, 11 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_amazon_use_how_oft = A.answer_text
+
+UNION ALL
+
+-- Q12: Substance - Cigs
+SELECT
+	  S.response_id
+	, 12 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_substance_cig_use = A.answer_text
+
+UNION ALL
+
+-- Q13: Substance - Marijuana
+SELECT
+	  S.response_id
+	, 13 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_substance_marij_use = A.answer_text
+
+UNION ALL
+
+-- Q14: Substance - Alcohol
+SELECT
+	  S.response_id
+	, 14 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_substance_alcohol_use = A.answer_text
+
+UNION ALL
+
+-- Q15: Diabetes
+SELECT
+	  S.response_id
+	, 15 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_personal_diabetes = A.answer_text
+
+UNION ALL
+
+-- Q16: Wheelchair
+SELECT
+	  S.response_id
+	, 16 AS q_id
+	, A.answer_id
+FROM bronze.survey_response S
+LEFT JOIN silver.answers A
+	ON S.q_personal_wheelchair = A.answer_text
+
+UNION ALL
+
+-- Q17: Life Changes
+-- Going to have for now that NULL = 999 for answer_id
+SELECT
+	  S.response_id
+	, 17 AS q_id
+	, COALESCE(A.answer_id, 999) AS answer_id
+FROM bronze.survey_response S
+OUTER APPLY string_split(S.q_life_changes, ',') L
+LEFT JOIN silver.answers A
+	ON L.value = A.answer_text
+)
+SELECT *
+FROM bigone
+;
