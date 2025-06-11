@@ -141,7 +141,8 @@ VALUES
 	(92, 'Wisconsin'),
 	(93, 'Wyoming'),
 	(94, 'District of Columbia'),
-	(95, 'I did not reside in the United States')
+	(95, 'I did not reside in the United States'),
+	(999, 'BLANK')
 ;
 
 /*
@@ -272,7 +273,8 @@ VALUES
 	(17, 40),
 	(17, 41),
 	(17, 42),
-	(17, 43)
+	(17, 43),
+	(17, 999)
 ;
 
 
@@ -487,9 +489,9 @@ UNION ALL
 SELECT
 	  S.response_id
 	, 17 AS q_id
-	, COALESCE(A.answer_id, 999) AS answer_id
+	, A.answer_id
 FROM bronze.survey_response S
-OUTER APPLY string_split(S.q_life_changes, ',') L
+OUTER APPLY string_split(CASE WHEN q_life_changes IS NULL THEN 'BLANK' ELSE S.q_life_changes END, ',') L
 LEFT JOIN silver.answers A
 	ON L.value = A.answer_text
 )
