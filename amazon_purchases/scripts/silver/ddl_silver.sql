@@ -20,16 +20,17 @@ CREATE TABLE silver.answers (
 DROP TABLE IF EXISTS silver.question_answer;
 CREATE TABLE silver.question_answer (
 	question_id INT FOREIGN KEY REFERENCES silver.questions(question_id), --foreign key
-	answer_id INT FOREIGN KEY REFERENCES silver.answers(answer_id), --FK
-	qa_id INT PRIMARY KEY--PK
+	answer_id INT FOREIGN KEY REFERENCES silver.answers(answer_id) --FK
 );
 
 DROP TABLE IF EXISTS silver.user_answers;
 CREATE TABLE silver.user_answers (
 	response_id NVARCHAR(100) NOT NULL FOREIGN KEY REFERENCES silver.users(response_id), --FK KEY
-	qa_id INT NOT NULL FOREIGN KEY REFERENCES silver.question_answer(qa_id) --FK
+	q_id INT NOT NULL FOREIGN KEY REFERENCES silver.questions(question_id), --FK
+	answer_id INT NOT NULL FOREIGN KEY REFERENCES silver.answers(answer_id)
 );
 
+DROP TABLE IF EXISTS silver.amazon_purchases;
 CREATE TABLE silver.amazon_purchases (
 	order_date DATE NOT NULL,
 	purchase_price_per_unit DECIMAL(10, 2) NOT NULL,
@@ -38,5 +39,5 @@ CREATE TABLE silver.amazon_purchases (
 	title NVARCHAR(2000) NULL,
 	product_code NVARCHAR(30) NULL,
 	category NVARCHAR(100) NULL,
-	response_id NVARCHAR(50) NOT NULL -- FK add the constraint during or after table creation?
+	response_id NVARCHAR(100) NOT NULL FOREIGN KEY REFERENCES silver.users(response_id)-- FK add the constraint during or after table creation?
 );
