@@ -3,6 +3,7 @@
 Insert data into: silver.users
 =====================================================
 */
+TRUNCATE TABLE silver.users;
 
 INSERT INTO silver.users (response_id)
 SELECT DISTINCT response_id
@@ -13,6 +14,7 @@ FROM bronze.survey_response;
 Insert: silver.questions
 ==============================================
 */
+TRUNCATE TABLE silver.questions;
 
 INSERT INTO silver.questions (question_id, category, question_type, question_text)
 VALUES
@@ -32,7 +34,7 @@ VALUES
 	(14, 'personal', 'single', 'Do you or someone in your household or someone you share your Amazon account with drink alcohol regularly?'),
 	(15, 'personal', 'single', 'Do you or someone in your household or someone you share your Amazon account with have diabetes?'),
 	(16, 'personal', 'single', 'Do you or someone in your household or someone you share your Amazon account with use a wheelchair?'),
-	(17, 'personal', 'optional multi-select', 'In 2021 did you, or someone you share your Amazon account with, experience any of the following life changes?')
+	(17, 'personal', 'multi-select', 'In 2021 did you, or someone you share your Amazon account with, experience any of the following life changes?')
 ;
 
 /*
@@ -147,6 +149,8 @@ VALUES
 Insert: silver.question_answer
 ==============================================
 */
+TRUNCATE TABLE silver.question_answer;
+
 INSERT INTO silver.question_answer (question_id, answer_id)
 VALUES
 	(1, 1),
@@ -277,6 +281,7 @@ VALUES
 Insert: silver.amazon_purchases
 ==============================================
 */
+TRUNCATE TABLE silver.amazon_purchases
 
 INSERT INTO silver.amazon_purchases (order_date, purchase_price_per_unit, quantity, shipping_address_state, title, product_code, category, response_id)
 SELECT
@@ -291,309 +296,6 @@ SELECT
 FROM bronze.amazon_purchases
 WHERE title NOT LIKE '%20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] 00:00:00%'
 ;
-
-SELECT
-	  response_id
-	, q_demos_age_group
-	, q_demos_hispanic
-	, r.value AS race
-	, q_demos_education
-	, q_demos_income
-	, q_demos_gender
-	, q_demos_sexual_orientation
-	, q_demos_state
-	, q_amazon_use_howmany
-	, q_amazon_use_hh_size
-	, q_amazon_use_how_oft
-	, q_substance_cig_use
-	, q_substance_marij_use
-	, q_substance_alcohol_use
-	, q_personal_diabetes
-	, q_personal_wheelchair
-	, lc.value AS life_changes
-FROM bronze.survey_response
-OUTER APPLY string_split(q_life_changes, ',') lc
-OUTER APPLY string_split (q_demos_race, ',') r
-ORDER BY response_id;
-
-SELECT
-	  response_id
-	, q_life_changes
-	, sd.value
-FROM bronze.survey_response
-OUTER APPLY string_split(q_life_changes, ',') sd
-ORDER BY response_id;
-
-SELECT
-	  response_id
-	, 1 AS q1
-	, q_demos_age_group
-	, CASE q_demos_age_group
-		WHEN '18 - 24 years' THEN 1
-		WHEN '25 - 34 years' THEN 2
-		WHEN '35 - 44 years' THEN 3
-		WHEN '45 - 54 years' THEN 4
-		WHEN '55 - 64 years' THEN 5
-		WHEN '65 and older' THEN 6
-		END AS age_id
-	, 2 AS q2
-	, q_demos_hispanic
-	, CASE q_demos_hispanic
-		WHEN 'Yes' THEN 7
-		WHEN 'No' THEN 8
-		END as hispanic_id
-	, 3 AS q3
-	, r.value AS race
-	, CASE r.value
-		WHEN 'White or Caucasian' THEN 9
-		WHEN 'Black or African American' THEN 10
-		WHEN 'American Indian/Native American or Alaska Native' THEN 11
-		WHEN 'Asian' THEN 12
-		WHEN 'Native Hawaiian or Other Pacific Islander' THEN 13
-		WHEN 'Other' THEN 14
-		END AS race_id
-	, q_demos_education
-	, q_demos_income
-	, q_demos_gender
-	, q_demos_sexual_orientation
-	, q_demos_state
-	, q_amazon_use_howmany
-	, q_amazon_use_hh_size
-	, q_amazon_use_how_oft
-	, q_substance_cig_use
-	, q_substance_marij_use
-	, q_substance_alcohol_use
-	, q_personal_diabetes
-	, q_personal_wheelchair
-	, lc.value AS life_changes
-FROM bronze.survey_response
-OUTER APPLY string_split(q_life_changes, ',') lc
-OUTER APPLY string_split (q_demos_race, ',') r
-ORDER BY response_id;
-
-
--- Q1: Age
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_demos_age_group
-	, A.answer_text
-	, CONCAT(1, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_demos_age_group = A.answer_text
-;
-
--- Q2: Hispanic
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_demos_hispanic
-	, A.answer_text
-	, CONCAT(2, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_demos_hispanic = A.answer_text
-;
-
--- Q3: Race
-SELECT
-	  S.response_id
-	, A.answer_id
-	, R.value
-	, A.answer_text
-	, CONCAT(3, A.answer_id)
-FROM bronze.survey_response S
-OUTER APPLY string_split(S.q_demos_race, ',') R
-LEFT JOIN silver.answers A
-	ON R.value = A.answer_text
-;
-
--- Q4: Education
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_demos_education
-	, A.answer_text
-	, CONCAT(4, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_demos_education = A.answer_text
-;
-
--- Q5: Income
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_demos_income
-	, A.answer_text
-	, CONCAT(5, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_demos_income = A.answer_text
-;
-
--- Q6: Gender
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_demos_gender
-	, A.answer_text
-	, CONCAT(6, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_demos_gender = A.answer_text
-;
-
--- Q7: Sexual Orientation
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_demos_sexual_orientation
-	, A.answer_text
-	, CONCAT(7, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_demos_sexual_orientation = LOWER(A.answer_text)
-;
-
--- Q8: State
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_demos_state
-	, A.answer_text
-	, CONCAT(8, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_demos_state = A.answer_text
-;
-
--- Q9: # sharing account
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_amazon_use_howmany
-	, A.answer_text
-	, CONCAT(9, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_amazon_use_howmany = A.answer_text
-;
-
--- Q10: Household size
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_amazon_use_hh_size
-	, A.answer_text
-	, CONCAT(10, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_amazon_use_hh_size = A.answer_text
-;
-
--- Q11: How often
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_amazon_use_how_oft
-	, A.answer_text
-	, CONCAT(11, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_amazon_use_how_oft = A.answer_text
-;
-
-
--- Q12: Substance - Cigs
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_substance_cig_use
-	, A.answer_text
-	, CONCAT(12, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_substance_cig_use = A.answer_text
-;
-
--- Q13: Substance - Marijuana
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_substance_marij_use
-	, A.answer_text
-	, CONCAT(13, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_substance_marij_use = A.answer_text
-;
-
--- Q14: Substance - Alcohol
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_substance_alcohol_use
-	, A.answer_text
-	, CONCAT(14, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_substance_alcohol_use = A.answer_text
-;
-
--- Q15: Diabetes
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_personal_diabetes
-	, A.answer_text
-	, CONCAT(15, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_personal_diabetes = A.answer_text
-;
-
--- Q16: Wheelchair
-SELECT
-	  S.response_id
-	, A.answer_id
-	, S.q_personal_wheelchair
-	, A.answer_text
-	, CONCAT(16, A.answer_id)
-FROM bronze.survey_response S
-LEFT JOIN silver.answers A
-	ON S.q_personal_wheelchair = A.answer_text
-;
-
--- Q17: Life Changes
--- Going to have for now that NULL = 999 for answer_id
-SELECT
-	  S.response_id
-	, A.answer_id
-	, L.value
-	, A.answer_text
-	, CONCAT(17, COALESCE(A.answer_id, 000))
-FROM bronze.survey_response S
-OUTER APPLY string_split(S.q_life_changes, ',') L
-LEFT JOIN silver.answers A
-	ON L.value = A.answer_text
-;
-
--- Q17: Life Changes
--- Going to have for now that NULL = 999 for answer_id
-SELECT
-	  S.response_id
-	, A.answer_id
-	, L.value
-	, A.answer_text
-	, CONCAT(17, COALESCE(A.answer_id, 999))
-FROM bronze.survey_response S
-OUTER APPLY string_split(S.q_life_changes, ',') L
-LEFT JOIN silver.answers A
-	ON L.value = A.answer_text
-;
-
 
 
 /*
@@ -793,4 +495,76 @@ LEFT JOIN silver.answers A
 )
 SELECT *
 FROM bigone
+;
+
+/*
+==============================================
+Drop FKs in silver.question_answer
+==============================================
+*/
+ALTER TABLE silver.question_answer DROP CONSTRAINT question_id_FK;
+ALTER TABLE silver.question_answer DROP CONSTRAINT answer_id_qa_FK;
+
+/*
+==============================================
+Drop FKs in silver.user_answers
+==============================================
+*/
+
+ALTER TABLE silver.user_answers DROP CONSTRAINT response_id_FK;
+ALTER TABLE silver.user_answers DROP CONSTRAINT q_id_FK;
+ALTER TABLE silver.user_answers DROP CONSTRAINT answer_id_ua_FK;
+
+
+-- Need to drop the other FK restraints in other tables
+-- Drop constraints in question_answer, user_answer, amazon_purchases
+
+/*
+==============================================
+Drop FKs in silver.amazon_purchases
+==============================================
+*/
+ALTER TABLE silver.amazon_purchases DROP CONSTRAINT response_id_purchase_FK;
+
+/*
+==============================================
+Truncate all tables
+==============================================
+*/
+
+TRUNCATE TABLE silver.users;
+TRUNCATE TABLE silver.questions;
+TRUNCATE TABLE silver.answers;
+TRUNCATE TABLE silver.question_answer;
+TRUNCATE TABLE silver.user_answers;
+TRUNCATE TABLE silver.amazon_purchases;
+
+ALTER TABLE silver.question_answer
+ADD CONSTRAINT question_id_FK
+FOREIGN KEY (question_id) REFERENCES silver.questions (question_id)
+;
+
+ALTER TABLE silver.question_answer
+ADD CONSTRAINT answer_id_qa_FK 
+FOREIGN KEY (answer_id) REFERENCES silver.answers (answer_id)
+;
+
+ALTER TABLE silver.user_answers
+ADD CONSTRAINT response_id_FK 
+FOREIGN KEY (response_id) REFERENCES silver.users (response_id)
+;
+
+ALTER TABLE silver.user_answers
+ADD CONSTRAINT q_id_FK 
+FOREIGN KEY (q_id) REFERENCES silver.questions (question_id)
+;
+
+ALTER TABLE silver.user_answers
+ADD CONSTRAINT answer_id_ua_FK 
+FOREIGN KEY (answer_id) REFERENCES silver.answers (answer_id)
+;
+
+ALTER TABLE silver.amazon_purchases
+ADD CONSTRAINT response_id_purchase_FK 
+FOREIGN KEY (response_id) REFERENCES silver.users (response_id)
 ;
