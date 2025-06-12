@@ -544,3 +544,5 @@ BEGIN
 	;
 
 END
+
+EXEC silver.load_silver;
