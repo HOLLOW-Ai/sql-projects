@@ -296,7 +296,7 @@ SELECT
 	, category
 	, response_id
 FROM bronze.amazon_purchases
-WHERE title NOT LIKE '%20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] 00:00:00%'
+WHERE title NOT LIKE '%20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] 00:00:00%' -- Just to not include that one row with multiple transactions
 ;
 
 
@@ -306,8 +306,9 @@ Insert: silver.user_answers
 ==============================================
 */
 
+
 -- Q1: Age
-WITH bigone AS (
+WITH answers_cte AS (
 SELECT
 	  S.response_id
 	, 1 AS q_id
@@ -495,8 +496,9 @@ OUTER APPLY string_split(CASE WHEN q_life_changes IS NULL THEN 'BLANK' ELSE S.q_
 LEFT JOIN silver.answers A
 	ON L.value = A.answer_text
 )
-SELECT *
-FROM bigone
+INSERT INTO silver.user_answers (response_id, q_id, answer_id)
+SELECT response_id, q_id, answer_id
+FROM answers_cte
 ;
 
 /*
