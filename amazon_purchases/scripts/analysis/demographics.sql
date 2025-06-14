@@ -9,22 +9,25 @@ FROM silver.questions;
 
 -- How many respondents identified with more than one race?
 WITH race_per_respondent AS (
-SELECT
-	  response_id
-	, COUNT(DISTINCT answer_id) AS races_picked
-FROM silver.user_answers
-WHERE q_id = 3
-GROUP BY response_id
+	-- q_id = 3 refers to the survey question about the race(s) the respondent identifies with
+	-- In the silver.user_answers table, a response_id can appear multiple times with q_id = 3 if they selected multiple races and have unique answer_id
+	SELECT
+		  response_id
+		, COUNT(DISTINCT answer_id) AS num_selected
+	FROM silver.user_answers
+	WHERE q_id = 3
+	GROUP BY response_id
 )
 SELECT
-	races_picked
+	num_selected
 	, COUNT(DISTINCT response_id) AS num_ppl
 FROM race_per_respondent
-GROUP BY races_picked
-ORDER BY races_picked
+GROUP BY num_selected
+ORDER BY num_selected
 ;
 
 -- Race spread?
+-- This will count some respondents multiple times as you can identify with more than one race
 WITH race AS (
 	SELECT
 		  answer_id
@@ -38,7 +41,8 @@ SELECT
 	, R.num_ppl
 FROM race R
 INNER JOIN silver.answers A
-	ON R.answer_id = A.answer_id;
+	ON R.answer_id = A.answer_id
+;
 
 -- Age group count?
 WITH ages AS (
@@ -54,9 +58,11 @@ SELECT
 	, AG.num_ppl
 FROM ages AG
 INNER JOIN silver.answers A
-	ON AG.answer_id = A.answer_id;
+	ON AG.answer_id = A.answer_id
+;
 
 -- Most popular category per race
+-- Top 5 categories per race
 -- Do both counting distinct buyers once and then another with ppl ordering multiple times
 WITH orders_race AS (
 	SELECT
@@ -90,6 +96,7 @@ ORDER BY race, rnks
 
 
 -- Most popular category per age group; age q_id = 1
+-- Top 5 Categories by Age Group
 WITH orders_age_groups AS (
 	SELECT
 		  P.response_id
@@ -122,14 +129,22 @@ ORDER BY age_group, rnks
 
 -- Education and race, and age
 
--- income and order amount
+-- income and order amount; AVG money spent per income group
 -- Income q_id = 5
-
-
-
--- income and race
-
--- income and gender
+SELECT
+	  age_group
+	, AVG(purchase_price_per_unit * quantity) AS avg_spent_per_order
+FROM silver.amazon_purchases P
+INNER JOIN (
+	SELECT response_id, answer_text AS age_group
+	FROM silver.user_answers UA
+	INNER JOIN silver.answers A
+		ON UA.answer_id = A.answer_id
+		AND q_id = 5
+	) age_groups
+	ON P.response_id = age_groups.response_id
+GROUP BY age_group
+;
 
 -- income and popular category
 -- think i can shorten this and do the aggregation in the first query tbh
@@ -183,6 +198,44 @@ GROUP BY q_demos_gender, q_demos_race, q_demos_age_group, q_demos_sexual_orienta
 ORDER BY num_ppl DESC
 ;
 
+-- What is the most popular category among ______ demographic, not including books?
+
+
+
+-- How often do people shop on amazon based on age, gender, income?
+
 -- ========================================
 -- Time Trend Analysis
 -- ========================================
+
+-- # of orders per year
+-- The dataset page says that the data should be from 2018-2022
+SELECT
+	  YEAR(order_date) AS order_year
+	, COUNT(*) AS num_orders
+FROM silver.amazon_purchases
+GROUP BY YEAR(order_date)
+ORDER BY YEAR(order_date) ASC
+;
+
+
+
+-- # of orders per month and year sorted by month, year
+SELECT
+	  FORMAT(order_date, 'yyyy-MMM') AS year_month
+	, COUNT(*) AS num_orders
+FROM silver.amazon_purchases
+GROUP BY FORMAT(order_date, 'yyyy-MMM')
+ORDER BY FORMAT(order_date, 'yyyy-MMM')
+;
+
+SELECT
+	  FORMAT(order_date, 'MMM') AS order_month
+	, FORMAT(order_date, 'yyyy') AS order_year
+	, COUNT(*) AS num_orders
+	, AVG(purchase_price_per_unit * quantity)
+FROM silver.amazon_purchases
+GROUP BY  MONTH(order_date), FORMAT(order_date, 'MMM'),  FORMAT(order_date, 'yyyy')
+ORDER BY MONTH(order_date), order_year
+;
+-- Avg spent
