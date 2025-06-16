@@ -25,13 +25,32 @@ SELECT
 FROM ranked_cats
 WHERE rnk <= 5
 ORDER BY rnk
+;
 
--- Top 5 Categories by Total Sales
+-- Top 5 Best Performing Categories by Total Sales
 WITH ranked_sales AS (
 	SELECT
 		  category
 		, SUM(purchase_price_per_unit * quantity) AS total_sales
 		, DENSE_RANK() OVER (ORDER BY SUM(purchase_price_per_unit * quantity) DESC) AS rnk
+	FROM silver.amazon_purchases
+	GROUP BY category
+)
+SELECT
+	  category
+	, total_sales
+	, rnk
+FROM ranked_sales
+WHERE rnk <= 5
+ORDER BY rnk
+;
+
+-- Top 5 Worst Performing Categories by Total Sales
+WITH ranked_sales AS (
+	SELECT
+		  category
+		, SUM(purchase_price_per_unit * quantity) AS total_sales
+		, DENSE_RANK() OVER (ORDER BY SUM(purchase_price_per_unit * quantity) ASC) AS rnk
 	FROM silver.amazon_purchases
 	GROUP BY category
 )
