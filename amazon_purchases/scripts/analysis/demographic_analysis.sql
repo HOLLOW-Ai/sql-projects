@@ -1,9 +1,8 @@
 /*
 ===============================================================================
-Exploratory Data Analysis
+Demographics Exploration
 ===============================================================================
 Purpose:
-	- To explore the cardinality of columns
 	- To gain a better understanding of the dataset and find possible
 	  relationships and/or trends
 	- To understand the demographics of the survey respondents
@@ -138,18 +137,7 @@ ORDER BY CASE A.answer_text
 ;
 
 -- What is the most prevalent demographic based on all demographic factors?
--- (grouped by income (5), race (3), gender (6), sexual orientation (7), education (4), age (1))
 
-SELECT
-	response_id
-	, q_id
-	, answer_id
-FROM silver.user_answers
-WHERE q_id IN (1, 3, 4, 5, 6, 7);
-
-
--- Alternatively, it would be easier to use the bronze.survey_responses table that was imported prior
--- Issue is now for people who choose multiple races
 WITH demos_1 AS (
 	SELECT
 		response_id
@@ -164,7 +152,7 @@ WITH demos_1 AS (
 				, q_id
 				, answer_id
 			FROM silver.user_answers
-			WHERE q_id IN (1, 4, 5, 6, 7)
+			WHERE q_id IN (1, 4, 5, 6, 7) -- Age, Race, Education, Income, Gender, and Sexual Orientation, respectively
 		) AS src
 	PIVOT
 	(
@@ -172,28 +160,25 @@ WITH demos_1 AS (
 		FOR q_id IN ([1], [4], [5], [6], [7])
 	) AS pvt
 ), demos_race AS (
---ORDER BY response_id
 
-
-
--- Race has its own query due to multiple answers
+-- Race has its own query due to multiple answers, so PIVOT would only keep one race per respondent
 	SELECT
 		response_id
 		, answer_id AS race
 	FROM silver.user_answers
 	WHERE q_id = 3
 ), demos_full AS (
-SELECT
-	  D.response_id
-	, age_group
-	, race
-	, education_level
-	, income_group
-	, gender
-	, sexual_orientation
-FROM demos_1 D
-INNER JOIN demos_race R
-	ON D.response_id = R.response_id
+	SELECT
+		  D.response_id
+		, age_group
+		, race
+		, education_level
+		, income_group
+		, gender
+		, sexual_orientation
+	FROM demos_1 D
+	INNER JOIN demos_race R
+		ON D.response_id = R.response_id
 )
 SELECT
 	  age_group
@@ -205,6 +190,51 @@ SELECT
 	, COUNT(DISTINCT response_id)
 FROM demos_full
 GROUP BY age_group, race, education_level, income_group, gender, sexual_orientation
+
 -- What is the earliest and latest order dates in the dataset?
+-- Based on background information of the dataset, the earliest date should be Jan 1, 2018
+SELECT
+	  MIN(order_date) AS earliest_order_date
+	, MAX(order_date) AS latest_order_date
+FROM silver.amazon_purchases;
 
 -- Do individuals using wheelchairs order more on average than individuals who do not use wheelchairs?
+WITH orders_per_user AS (
+	-- Number of orders made by each respondent
+	SELECT
+		  response_id
+		, COUNT(*) AS num_orders
+	FROM silver.amazon_purchases
+	GROUP BY response_id
+), wheelchair_user AS (
+	-- Respondents' answer to question 16 about wheelchair use
+	SELECT
+		response_id
+		, answer_id
+	FROM silver.user_answers
+	WHERE q_id = 16
+), orders_and_wheelchair_use AS (
+	-- Combining the 2 previous CTEs
+	SELECT
+		  O.response_id
+		, O.num_orders
+		, W.answer_id
+	FROM orders_per_user O
+	INNER JOIN wheelchair_user W
+		ON O.response_id = W.response_id
+), averaged_orders AS (
+	-- Average orders made by answer to wheelchair question
+	SELECT
+		  answer_id
+		, AVG(num_orders) AS avg_orders
+	FROM orders_and_wheelchair_use
+	GROUP BY answer_id
+)
+SELECT
+	  answers.answer_text
+	, avg_orders
+FROM averaged_orders
+INNER JOIN silver.answers
+	ON averaged_orders.answer_id = answers.answer_id
+;
+-- Could delve deeper by adding other demographic factors, or looking at the change in number of orders over time
