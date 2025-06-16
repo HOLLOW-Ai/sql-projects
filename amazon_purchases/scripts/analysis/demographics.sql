@@ -58,32 +58,6 @@ ORDER BY income_group, num_orders DESC
 ;
 
 
--- sexual orientation + age + race
-
--- the amount of time users purchase from amazon per month and segmented by some demographic
-
--- how often do people shop on amazon per month based on age, race, gender, sexual orientation, etc
-
--- The most prevalent demographic (grouped by income (5), race (3), gender (6), sexual orientation (7), education (4), age (1))
-SELECT
-	    q_demos_gender AS gender
-	  , q_demos_race AS race
-	  , q_demos_age_group AS age_group
-	  , q_demos_sexual_orientation AS sexual_orientation
-	  , q_demos_education AS education
-	  , q_demos_income AS income
-	  , COUNT(DISTINCT response_id) AS num_ppl
-FROM bronze.survey_response
-GROUP BY q_demos_gender, q_demos_race, q_demos_age_group, q_demos_sexual_orientation, q_demos_education, q_demos_income
-ORDER BY num_ppl DESC
-;
-
--- What is the most popular category among ______ demographic, not including books?
-
-
-
--- How often do people shop on amazon based on age, gender, income?
-
 -- ========================================
 -- Time Trend Analysis
 -- ========================================
@@ -120,85 +94,6 @@ ORDER BY MONTH(order_date), order_year
 ;
 
 
-
-/*
-===============================================================================
-Database Exploration
-===============================================================================
-*/
--- Retrieve a list of all tables in the database
-SELECT 
-    TABLE_CATALOG, 
-    TABLE_SCHEMA, 
-    TABLE_NAME, 
-    TABLE_TYPE
-FROM INFORMATION_SCHEMA.TABLES;
-
-SELECT 
-	TABLE_NAME,
-    COLUMN_NAME, 
-    DATA_TYPE, 
-    IS_NULLABLE, 
-    CHARACTER_MAXIMUM_LENGTH
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA = 'silver';
-
--- Retrieve a list of unique countries from which customers originate
-SELECT DISTINCT 
-    category 
-FROM silver.amazon_purchases
-;
-
-/*
-===============================================================================
-Date Range Exploration
-===============================================================================
-*/
-SELECT
-	  MIN(order_date) AS first_order_date
-	, MAX(order_date) AS last_order_date
-	, DATEDIFF(YEAR, MIN(order_date), MAX(order_date))
-FROM silver.amazon_purchases;
-
-/*
-===============================================================================
-Measure Exploration (Key Metrics)
-===============================================================================
-*/
--- Total Sales
-SELECT SUM(purchase_price_per_unit * quantity)
-FROM silver.amazon_purchases;
-
--- Total orders made
-SELECT
-	COUNT(*) AS total_orders
-FROM silver.amazon_purchases;
-
--- How many items sold
-SELECT
-	SUM(quantity) AS total_quantity
-FROM silver.amazon_purchases;
-
--- Average Unit Price
-SELECT
-	AVG(purchase_price_per_unit) AS avg_price
-FROM silver.amazon_purchases;
-
--- Generate a Report that shows all key metrics of the business
-/*
-SELECT 'Total Sales' AS measure_name, SUM(sales_amount) AS measure_value FROM gold.fact_sales
-UNION ALL
-SELECT 'Total Quantity', SUM(quantity) FROM gold.fact_sales
-UNION ALL
-SELECT 'Average Price', AVG(price) FROM gold.fact_sales
-UNION ALL
-SELECT 'Total Orders', COUNT(DISTINCT order_number) FROM gold.fact_sales
-UNION ALL
-SELECT 'Total Products', COUNT(DISTINCT product_name) FROM gold.dim_products
-UNION ALL
-SELECT 'Total Customers', COUNT(customer_key) FROM gold.dim_customers;
-*/
-
 /*
 ===============================================================================
 Magnitude Analysis
@@ -219,21 +114,6 @@ Magnitude Analysis
 -- Total categories bought from by each customer
 
 -- Distribution of customers across states
-
-/*
-===============================================================================
-Ranking Analysis
-===============================================================================
-Ranking items based on performance or other measures
-*/
-
--- Top 5 products generating the highest revenue (or category)
-
--- Top 5 states generating the highest revenue
-
--- Top 5 worst performing categories
-
--- Top demographics generating the highest revenue
 
 /*
 ===============================================================================
