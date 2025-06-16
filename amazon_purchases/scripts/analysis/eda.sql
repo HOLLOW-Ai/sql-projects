@@ -146,3 +146,65 @@ SELECT
 	, answer_id
 FROM silver.user_answers
 WHERE q_id IN (1, 3, 4, 5, 6, 7);
+
+
+-- Alternatively, it would be easier to use the bronze.survey_responses table that was imported prior
+-- Issue is now for people who choose multiple races
+WITH demos_1 AS (
+	SELECT
+		response_id
+		, [1] AS age_group
+		, [4] AS education_level
+		, [5] AS income_group
+		, [6] AS gender
+		, [7] AS sexual_orientation
+	FROM (
+			SELECT
+				response_id
+				, q_id
+				, answer_id
+			FROM silver.user_answers
+			WHERE q_id IN (1, 4, 5, 6, 7)
+		) AS src
+	PIVOT
+	(
+		SUM(answer_id)
+		FOR q_id IN ([1], [4], [5], [6], [7])
+	) AS pvt
+), demos_race AS (
+--ORDER BY response_id
+
+
+
+-- Race has its own query due to multiple answers
+	SELECT
+		response_id
+		, answer_id AS race
+	FROM silver.user_answers
+	WHERE q_id = 3
+), demos_full AS (
+SELECT
+	  D.response_id
+	, age_group
+	, race
+	, education_level
+	, income_group
+	, gender
+	, sexual_orientation
+FROM demos_1 D
+INNER JOIN demos_race R
+	ON D.response_id = R.response_id
+)
+SELECT
+	  age_group
+	, race
+	, education_level
+	, income_group
+	, gender
+	, sexual_orientation
+	, COUNT(DISTINCT response_id)
+FROM demos_full
+GROUP BY age_group, race, education_level, income_group, gender, sexual_orientation
+-- What is the earliest and latest order dates in the dataset?
+
+-- Do individuals using wheelchairs order more on average than individuals who do not use wheelchairs?
