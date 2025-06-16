@@ -6,6 +6,7 @@ Purpose:
 	- To explore the cardinality of columns
 	- To gain a better understanding of the dataset and find possible
 	  relationships and/or trends
+	- To understand the demographics of the survey respondents
 ===============================================================================
 */
 
@@ -109,3 +110,39 @@ FROM race_per_respondent
 GROUP BY num_selected
 ORDER BY num_selected
 ;
+
+-- What is the income distribution of the respondents?
+WITH income_groups AS (
+	SELECT
+		  answer_id
+		, COUNT(DISTINCT response_id) AS num_ppl
+	FROM silver.user_answers
+	WHERE q_id = 5
+	GROUP BY answer_id
+)
+SELECT
+	  A.answer_text AS income
+	, I.num_ppl
+FROM income_groups I
+INNER JOIN silver.answers A
+	ON I.answer_id = A.answer_id
+ORDER BY CASE A.answer_text
+				WHEN 'Less than $25,000' THEN 1
+				WHEN '$25,000 - $49,999' THEN 2
+				WHEN '$50,000 - $74,999' THEN 3
+				WHEN '$75,000 - $99,999' THEN 4
+				WHEN '$100,000 - $149,999' THEN 5
+				WHEN '$150,000 or more' THEN 6
+				WHEN 'Prefer not to say' THEN 7
+		  END ASC 
+;
+
+-- What is the most prevalent demographic based on all demographic factors?
+-- (grouped by income (5), race (3), gender (6), sexual orientation (7), education (4), age (1))
+
+SELECT
+	response_id
+	, q_id
+	, answer_id
+FROM silver.user_answers
+WHERE q_id IN (1, 3, 4, 5, 6, 7);
