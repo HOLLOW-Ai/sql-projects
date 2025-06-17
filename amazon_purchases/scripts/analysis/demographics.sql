@@ -58,40 +58,6 @@ ORDER BY income_group, num_orders DESC
 ;
 
 
--- ========================================
--- Time Trend Analysis
--- ========================================
-
--- # of orders per year
--- The dataset page says that the data should be from 2018-2022
-SELECT
-	  YEAR(order_date) AS order_year
-	, COUNT(*) AS num_orders
-FROM silver.amazon_purchases
-GROUP BY YEAR(order_date)
-ORDER BY YEAR(order_date) ASC
-;
-
-
-
--- # of orders per month and year sorted by month, year
-SELECT
-	  FORMAT(order_date, 'yyyy-MMM') AS year_month
-	, COUNT(*) AS num_orders
-FROM silver.amazon_purchases
-GROUP BY FORMAT(order_date, 'yyyy-MMM')
-ORDER BY FORMAT(order_date, 'yyyy-MMM')
-;
-
-SELECT
-	  FORMAT(order_date, 'MMM') AS order_month
-	, FORMAT(order_date, 'yyyy') AS order_year
-	, COUNT(*) AS num_orders
-	, AVG(purchase_price_per_unit * quantity)
-FROM silver.amazon_purchases
-GROUP BY  MONTH(order_date), FORMAT(order_date, 'MMM'),  FORMAT(order_date, 'yyyy')
-ORDER BY MONTH(order_date), order_year
-;
 
 
 /*
@@ -117,47 +83,7 @@ Magnitude Analysis
 
 /*
 ===============================================================================
-Change Over Time Analysis
-===============================================================================
-DATEPART(), DATETRUNC(), FORMAT()
-*/
--- Sales performance over time
-
-/*
-===============================================================================
 Cumulative Analysis
 ===============================================================================
 Running totals, moving averages; Performance over time cumulatively
 */
-
-/*
-===============================================================================
-Performance Analysis (Year-over-Year, Month-over-Month)
-===============================================================================
-Purpose:
-    - To measure the performance of products, customers, or regions over time.
-    - For benchmarking and identifying high-performing entities.
-    - To track yearly trends and growth.
-
-SQL Functions Used:
-    - LAG(): Accesses data from previous rows.
-    - AVG() OVER(): Computes average values within partitions.
-    - CASE: Defines conditional logic for trend analysis.
-===============================================================================
-*/
-
-/*
-===============================================================================
-Part-to-Whole Analysis
-===============================================================================
-Purpose:
-    - To compare performance or metrics across dimensions or time periods.
-    - To evaluate differences between categories.
-    - Useful for A/B testing or regional comparisons.
-
-SQL Functions Used:
-    - SUM(), AVG(): Aggregates values for comparison.
-    - Window Functions: SUM() OVER() for total calculations.
-===============================================================================
-*/
--- Which categories contributed the most to overall sales?
