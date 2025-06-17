@@ -48,3 +48,28 @@ GROUP BY response_id
 ;
 
 -- Distribution of customers across states
+
+-- What is the average amount spent per order for each age group?
+SELECT
+	  age_group
+	, AVG(purchase_price_per_unit * quantity) AS avg_spent_per_order
+FROM silver.amazon_purchases P
+INNER JOIN (
+	SELECT response_id, answer_text AS age_group
+	FROM silver.user_answers UA
+	INNER JOIN silver.answers A
+		ON UA.answer_id = A.answer_id
+		AND q_id = 5
+	) age_groups
+	ON P.response_id = age_groups.response_id
+GROUP BY age_group
+ORDER BY CASE age_group
+				WHEN 'Less than $25,000' THEN 1
+				WHEN '$25,000 - $49,999' THEN 2
+				WHEN '$50,000 - $74,999' THEN 3
+				WHEN '$75,000 - $99,999' THEN 4
+				WHEN '$100,000 - $149,999' THEN 5
+				WHEN '$150,000 or more' THEN 6
+				WHEN 'Prefer not to say' THEN 7
+		  END ASC 
+;
