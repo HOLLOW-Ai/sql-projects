@@ -501,7 +501,10 @@ BEGIN
 			, category
 			, response_id
 		FROM bronze.amazon_purchases
-		WHERE title NOT LIKE '%20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] 00:00:00%' -- Just to not include that one row with multiple transactions
+		-- There is one row in the amazon_purchases table that I believe there was a user upload error
+		-- It looked like it contained multiple purchase orders in one line from the same respondent
+		-- Considering how it was missing some information and there were orders that data pre-2018, I opted to not include that row
+		WHERE title NOT LIKE '%20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] 00:00:00%'
 	;
 
 
