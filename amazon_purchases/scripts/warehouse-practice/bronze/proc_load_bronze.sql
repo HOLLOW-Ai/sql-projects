@@ -11,11 +11,11 @@ BEGIN
 
 	PRINT '>> Loading Data into Table: bronze.survey_response';
 	BULK INSERT bronze.survey_response
-	FROM 'C:\Users\Mary Huynh\Downloads\dataverse_files\survey.csv'
+	FROM '...\survey.csv' -- Edit path
 	WITH (
 			FIRSTROW = 2,
 			FIELDTERMINATOR = ',',
-			ROWTERMINATOR = '0x0A',
+			ROWTERMINATOR = '0x0A', -- Looking on Notepad++ the row terminator is "LF" so "0x0A" is the code for that
 			FORMAT = 'CSV' -- needed or else it will break up the data in the income column
 		);
 
@@ -24,7 +24,7 @@ BEGIN
 
 	PRINT '>> Loading Data into Table: bronze.amazon_purchases';
 	BULK INSERT bronze.amazon_purchases
-	FROM 'C:\Users\Mary Huynh\Downloads\dataverse_files\amazon-purchases.csv'
+	FROM '...\amazon-purchases.csv' -- Edit path
 	WITH (
 			FIRSTROW = 2,
 			FORMAT = 'CSV',
