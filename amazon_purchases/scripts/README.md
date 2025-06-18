@@ -1,2 +1,2 @@
-## Practice
-This is practice
+## Folders
+The **analysis** folder contains the SQL queries I wrote for data analysis. You may notice that there are more tables than the dataset initially had if you downloaded the zip file from the dataset source. If you look in **warehouse-practice** I was practicing DDL statements for the tables and the thought of "what if there were multiple surveys" and ran with that idea. I was watching Data with Baraa's video about data warehousing for practice.
