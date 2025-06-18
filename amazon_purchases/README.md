@@ -1,4 +1,5 @@
 # Project Info
+This project was focused on analyzing the amazon purchase history of 5027 participants along with survey questions about them. I did not delve into all of the different demographic factors or personal factors of the participants. I made queries based off the questions at the top of my head.
 
 ## Dataset
 The datasets can be found [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/YGLYDY). The file *amazon_purchases.csv* contains the purchase history of 5027 participants from 2018 to 2022. However, looking through the dataset shows multiple orders from 2023 and one order in 2024.
