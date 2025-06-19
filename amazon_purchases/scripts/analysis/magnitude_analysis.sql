@@ -97,7 +97,6 @@ INNER JOIN orders_shipped O -- Will get rid of the orders where the shipping sta
 ;
 
 
--- Average price in each category
 -- Category Analysis
 	-- Average price of items in each category
 	-- Total products in each category
