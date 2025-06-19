@@ -2,10 +2,8 @@
 ===============================================================================
 Ranking Analysis
 ===============================================================================
-Purpose:
-	- To gain a better understanding of the dataset and find possible
-	  relationships and/or trends
-	- To understand the demographics of the survey respondents
+Practicing using DENSE_RANK() to see if there was a difference in 
+purchasing behavior between different demographics.
 ===============================================================================
 */
 
