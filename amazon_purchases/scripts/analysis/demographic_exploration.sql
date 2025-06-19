@@ -2,10 +2,7 @@
 ===============================================================================
 Demographics Exploration
 ===============================================================================
-Purpose:
-	- To gain a better understanding of the dataset and find possible
-	  relationships and/or trends
-	- To understand the demographics of the survey respondents
+Exploring some of the demographic factors and aggregating the responses.
 ===============================================================================
 */
 
