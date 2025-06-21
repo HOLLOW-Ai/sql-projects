@@ -96,30 +96,33 @@ FROM complaints_raw;
 
 SELECT
 	  TRY_CAST(officer_id AS INT) AS officer_id
-	, first_name
-	, last_name
-	, command_july_2020
+	, TRIM(first_name) AS first_name -- Adding the TRIM() preemptively to make sure there is no extra whitespace
+	, TRIM(last_name) AS last_name
+	, TRIM(command_july_2020) AS command_july_2020
 	, TRY_CAST(shield_no AS INT) AS shield_no -- Unsure if 0 means something or if it is the default over NULL
 	, TRY_CAST(month_received AS INT) AS month_received
 	, TRY_CAST(year_received AS INT) AS year_received
 	, TRY_CAST(month_closed AS INT) AS month_closed
 	, TRY_CAST(year_closed AS INT) AS year_closed
-	, command_at_incident
-	, rank_abbrev_incident
-	, rank_abbrev_july_2020
-	, rank_incident
-	, rank_july_2020
-	, officer_ethnicity
-	, officer_gender
-	, officer_age_incident
-	, complainant_ethnicity
-	, complainant_gender -- Standardize how gender is entered
-	, complainant_age_incident
-	, fado_type
-	, allegation
+	, TRIM(command_at_incident) AS command_at_incident
+	, TRIM(rank_abbrev_incident) AS rank_abbrev_incident
+	, TRIM(rank_abbrev_july_2020) AS rank_abbrev_july_2020
+	, TRIM(rank_incident) AS rank_incident
+	, TRIM(rank_july_2020) AS rank_july_2020 
+	, TRIM(officer_ethnicity) AS officer_ethnicity
+	, CASE TRIM(officer_gender)
+		WHEN 'M' THEN 'Male'
+		WHEN 'F' THEN 'Female'
+	  END AS officer_gender
+	, TRIM(officer_age_incident) AS officer_age_incident
+	, TRIM(complainant_ethnicity) AS complainant_ethnicity
+	, TRIM(complainant_gender) AS complainant_gender -- Standardize how gender is entered
+	, TRIM(complainant_age_incident) AS complainant_age_incident
+	, TRIM(fado_type) AS fado_type
+	, TRIM(allegation) AS allegation
 	, TRY_CAST(precinct AS INT) AS precinct
-	, contact_reason
-	, outcome_description
-	, board_disposition
+	, TRIM(contact_reason) AS contact_reason
+	, TRIM(outcome_description) AS contact_reason
+	, TRIM(board_disposition) AS contact_reason
 FROM complaints_raw
 ;
