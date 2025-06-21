@@ -38,6 +38,8 @@ CREATE TABLE complaints_raw (
 ;
 
 -- Transformed table
+DROP TABLE IF EXISTS complaints;
+
 CREATE TABLE complaints (
 	officer_id INT NOT NULL, -- Changing the "mos" prefix to "officer"
 	first_name NVARCHAR(50),
@@ -52,13 +54,13 @@ CREATE TABLE complaints (
 	command_at_incident NVARCHAR(20),
 	rank_abbrev_incident NVARCHAR(10),
 	rank_abbrev_july_2020 NVARCHAR(10),
-	rank_july_2020 NVARCHAR(50),
 	rank_incident NVARCHAR(50), -- Move this to before the rank_july_2020 column to follow the pattern of the abbreviation columns
+	rank_july_2020 NVARCHAR(50),
 	officer_ethnicity NVARCHAR(15),
-	officer_gender NVARCHAR(10),
+	officer_gender NVARCHAR(30), -- Length of gender is matched to 30 because complainant gender can be longer than expected
 	officer_age_incident INT,
 	complainant_ethnicity NVARCHAR(15),
-	complainant_gender NVARCHAR(10),
+	complainant_gender NVARCHAR(30), -- This needs to be longer considering there is more than 2 genders
 	complainant_age_incident INT,
 	fado_type NVARCHAR(50),
 	allegation NVARCHAR(100),
@@ -67,6 +69,41 @@ CREATE TABLE complaints (
 	outcome_description NVARCHAR(100),
 	board_disposition NVARCHAR(100)
 	)
+;
+
+INSERT INTO complaints
+SELECT
+	  TRY_CAST(officer_id AS INT) AS officer_id
+	, TRIM(first_name) AS first_name -- Adding the TRIM() preemptively to make sure there is no extra whitespace
+	, TRIM(last_name) AS last_name
+	, TRIM(command_july_2020) AS command_july_2020
+	, TRY_CAST(shield_no AS INT) AS shield_no -- Unsure if 0 means something or if it is the default over NULL
+	, TRY_CAST(complaint_id AS INT) AS complaint_id
+	, TRY_CAST(month_received AS INT) AS month_received
+	, TRY_CAST(year_received AS INT) AS year_received
+	, TRY_CAST(month_closed AS INT) AS month_closed
+	, TRY_CAST(year_closed AS INT) AS year_closed
+	, TRIM(command_at_incident) AS command_at_incident
+	, TRIM(rank_abbrev_incident) AS rank_abbrev_incident
+	, TRIM(rank_abbrev_july_2020) AS rank_abbrev_july_2020
+	, TRIM(rank_incident) AS rank_incident
+	, TRIM(rank_july_2020) AS rank_july_2020 
+	, TRIM(officer_ethnicity) AS officer_ethnicity
+	, CASE TRIM(officer_gender)
+		WHEN 'M' THEN 'Male'
+		WHEN 'F' THEN 'Female'
+	  END AS officer_gender
+	, TRIM(officer_age_incident) AS officer_age_incident
+	, TRIM(complainant_ethnicity) AS complainant_ethnicity
+	, TRIM(complainant_gender) AS complainant_gender -- Standardize how gender is entered
+	, TRIM(complainant_age_incident) AS complainant_age_incident
+	, TRIM(fado_type) AS fado_type
+	, TRIM(allegation) AS allegation
+	, TRY_CAST(precinct AS INT) AS precinct
+	, TRIM(contact_reason) AS contact_reason
+	, TRIM(outcome_description) AS contact_reason
+	, TRIM(board_disposition) AS contact_reason
+FROM complaints_raw
 ;
 
 /*
@@ -124,5 +161,74 @@ SELECT
 	, TRIM(contact_reason) AS contact_reason
 	, TRIM(outcome_description) AS contact_reason
 	, TRIM(board_disposition) AS contact_reason
+FROM complaints_raw
+;
+
+/*
+=============================================================================
+Distinct Values
+=============================================================================
+	Checking for the distinct values NVARCHAR columns to define 
+	appropriate length.
+*/
+
+SELECT DISTINCT command_at_incident
+FROM complaints_raw
+;
+
+SELECT DISTINCT command_july_2020
+FROM complaints_raw
+;
+
+SELECT DISTINCT rank_abbrev_incident
+FROM complaints_raw
+;
+
+SELECT DISTINCT rank_abbrev_july_2020
+FROM complaints_raw
+;
+
+SELECT DISTINCT rank_incident
+FROM complaints_raw
+;
+
+SELECT DISTINCT rank_july_2020
+FROM complaints_raw
+;
+
+SELECT DISTINCT officer_ethnicity
+FROM complaints_raw
+;
+
+SELECT DISTINCT officer_gender
+FROM complaints_raw
+;
+
+
+SELECT DISTINCT complainant_ethnicity
+FROM complaints_raw
+;
+
+SELECT DISTINCT complainant_gender, LEN(complainant_gender)
+FROM complaints_raw
+;
+
+SELECT DISTINCT fado_type
+FROM complaints_raw
+;
+
+SELECT DISTINCT allegation
+FROM complaints_raw
+;
+
+SELECT DISTINCT contact_reason
+FROM complaints_raw
+;
+
+SELECT DISTINCT outcome_description
+FROM complaints_raw
+;
+
+SELECT DISTINCT board_disposition
 FROM complaints_raw
 ;
