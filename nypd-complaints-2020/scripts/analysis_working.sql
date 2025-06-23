@@ -101,3 +101,11 @@ FROM date_cols;
 SELECT DISTINCT fado_type
 FROM complaints
 ;
+
+-- Complaints by Officer Race and Complainant RAce (racial disparities?)
+
+-- Trend of complaints
+
+-- Finding each officers last complaint and finding the month difference
+
+-- Finding officers who received more than 1 complaint in a month
