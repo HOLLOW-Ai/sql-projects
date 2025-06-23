@@ -49,8 +49,10 @@ CREATE TABLE complaints (
 	complaint_id INT NOT NULL,
 	month_received INT,
 	year_received INT,
+	date_received DATE,
 	month_closed INT,
 	year_closed INT,
+	date_closed DATE,
 	command_at_incident NVARCHAR(20),
 	rank_abbrev_incident NVARCHAR(10),
 	rank_abbrev_july_2020 NVARCHAR(10),
@@ -81,8 +83,10 @@ SELECT
 	, TRY_CAST(complaint_id AS INT) AS complaint_id
 	, TRY_CAST(month_received AS INT) AS month_received
 	, TRY_CAST(year_received AS INT) AS year_received
+	, DATEFROMPARTS(year_received, month_received, '01') AS date_received -- Remember to add the new date columns to the updated field list in info.md
 	, TRY_CAST(month_closed AS INT) AS month_closed
 	, TRY_CAST(year_closed AS INT) AS year_closed
+	, DATEFROMPARTS(year_closed, month_closed, '01') AS date_closed
 	, TRIM(command_at_incident) AS command_at_incident
 	, TRIM(rank_abbrev_incident) AS rank_abbrev_incident
 	, TRIM(rank_abbrev_july_2020) AS rank_abbrev_july_2020
