@@ -1,12 +1,11 @@
 # Dataset
 The dataset can be downloaded [here](https://projects.propublica.org/datastore/#civilian-complaints-against-new-york-city-police-officers). 
 
-The dataset contains over 12,000 civilian complaints filed against New York City police officers from September 1985 to January 2020. The dataset contains only
-complaints about closed cases for police officers who are still on the force as of late June 2020 with at least one substantiated allegation against them. More context can be found in the above link.
+The dataset contains over 12,000 civilian complaints filed against New York City police officers from September 1985 to January 2020. The dataset contains only complaints about closed cases for police officers who are still on the force as of late June 2020 with at least one substantiated allegation against them. More context can be found in the above link.
 
+CCRB = Civilian Complaint Review Board
 
-
-## Fields
+## Field Names and Definitions
 For this dataset, I changed a few of the field names for better readability. The field information was taken from the data layout sheet included with the dataset download.
 
 - `officer_id`: Unique ID of the officer
@@ -28,11 +27,16 @@ For this dataset, I changed a few of the field names for better readability. The
 - `complainant_gender`: Complainant's gender
 - `complainant_age_incident`: Complainant's age at the time of the incident
 - `fado_type`: Top-level category of complaint
+   - "FADO" stands for Force, Abuse of Authority, Discourtesy, and Offensive Language
 - `allegation`: Specific category of complaint
 - `precinct`: Precinct associated with the complaint
 - `contact_reason`: Reason officer made contact with complainant
 - `outcome_description`: Outcome of the contact between officer and complainant
 - `board_disposition`: Finding by the CCRB
+   - There are 3 outcomes possible: Substantiated, Exonerated, and Unsubstantiated
+     - Substantiated: The alleged conduct occurred and it violated the rules
+     - Exonerated: The alleged conduct occurred but did not violate the NYPD's rules, which often give officers significant discretion over us of force
+     - Unsubstantiated: The CCRB has fully investigated but could not affirmatively conclude both that the conduct occurred and that it broke the rules
 
 # More Info
 For more information or reading, you can visit the below links to find updated data:
