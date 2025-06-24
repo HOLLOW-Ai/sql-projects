@@ -1,39 +1,4 @@
-USE nypd;
-
-SELECT *
-FROM complaints;
-
--- Earliest and Latest date of complaints
--- To combine the Year and Month columns into a date, we're going to use DATEFROMPARTS() and use '01' as the day since the function needs 3 arguments
-WITH date_of_complaints AS (
-SELECT
-	DATEFROMPARTS(year_received, month_received, '01') AS complaint_date
-FROM complaints
-)
-SELECT
-	  MIN(complaint_date)
-	, MAX(complaint_date)
-FROM date_of_complaints
-;
--- The earliest date of a complaint is from September 1985
--- Latest date is January 2020
-
--- How many unique complaints are there?
-SELECT
-	COUNT(DISTINCT complaint_id)
-FROM complaints
-;
--- 12056 unique complaints
-
--- From the dataset information page, we know that these are complaints for closed cases of officers who are still in the force as of July 2020
--- This doesn't include complaints that were found to be unfounded after investigations
-
--- FADO Types
-SELECT DISTINCT fado_type
-FROM complaints
-;
-
--- List columns later
+-- What officers have since moved to a different command
 SELECT *
 FROM complaints
 WHERE command_at_incident != command_july_2020
@@ -87,25 +52,95 @@ WHERE complaint_id IN (SELECT complaint_id FROM cte2)
 
 -- What is the average resolution time from when a complaint is received and when it is closed?
 -- Use months since the day is added to us to make the column a date type
-WITH date_cols AS (
 SELECT
-	  DATEFROMPARTS(year_received, month_received, '01') AS complaint_date
-	, DATEFROMPARTS(year_closed, month_closed, '01') AS closed_date
+	AVG(1.0 * DATEDIFF(month, date_received, date_closed))
 FROM complaints
-)
-SELECT
-	AVG(1.0* DATEDIFF(month, complaint_date, closed_date))
-FROM date_cols;
+;
 
--- What are the contributions of the FADO type that make up the complaints
+-- What are the contributions of the FADO type that make up the complaints/allegations
 SELECT DISTINCT fado_type
 FROM complaints
 ;
 
+SELECT
+	  fado_type
+	, COUNT(*) -- Not counting the complaint_id because complaints can have multiple allegations that belong to different FADO categories
+	, CAST(ROUND(100.0 * COUNT(*) / (SELECT COUNT(*) FROM complaints), 2) AS DECIMAL(5,2))
+FROM complaints
+GROUP BY fado_type
+;
+
 -- Complaints by Officer Race and Complainant RAce (racial disparities?)
 
--- Trend of complaints
+
+-- Trend of complaints received
+-- Low number in 2020 because the dataset only goes up to January 2020
+WITH agg_data AS (
+SELECT
+	  year_received
+	, COUNT(DISTINCT complaint_id) AS num_complaints
+FROM complaints
+GROUP BY year_received
+)
+SELECT
+	  year_received
+	, num_complaints
+	, CAST(100.0 * (num_complaints - LAG(num_complaints, 1) OVER (ORDER BY year_received ASC)) / LAG(num_complaints, 1) OVER (ORDER BY year_received ASC) AS DECIMAL(5, 1)) -- Casting will round
+FROM agg_data
+;
 
 -- Finding each officers last complaint and finding the month difference
+SELECT DISTINCT -- Adding distinct to remove the duplicate complaint_id that occurs due to multiple allegations
+	  officer_id
+	, complaint_id
+	, date_received
+	, LAG(date_received, 1) OVER (PARTITION BY officer_id ORDER BY date_received ASC) AS last_complaint_received_date
+	, DATEDIFF(month, LAG(date_received, 1) OVER (PARTITION BY officer_id ORDER BY date_received ASC), date_received)
+FROM complaints
+ORDER BY officer_id
+;
+
+WITH lag_complaints AS (
+SELECT DISTINCT -- Adding distinct to remove the duplicate complaint_id that occurs due to multiple allegations
+	  officer_id
+	, complaint_id
+	, date_received
+FROM complaints
+)
+SELECT
+	  officer_id
+	, complaint_id
+	, date_received
+	, LAG(date_received, 1) OVER (PARTITION BY officer_id ORDER BY date_received, complaint_id ASC) AS last_complaint_received_date
+	, DATEDIFF(month, LAG(date_received, 1) OVER (PARTITION BY officer_id ORDER BY date_received, complaint_id ASC), date_received) AS months_last_complaint
+FROM lag_complaints
+ORDER BY officer_id, date_received, complaint_id
+;
+
+-- Just to see if complaint_id and the date of the complaint is related
+SELECT DISTINCT complaint_id, date_received
+FROM complaints
+ORDER BY complaint_id
 
 -- Finding officers who received more than 1 complaint in a month
+SELECT
+	  officer_id
+	, date_received
+	, COUNT(DISTINCT complaint_id)
+FROM complaints
+GROUP BY officer_id, date_received
+HAVING COUNT(DISTINCT complaint_id) > 1
+ORDER BY date_received, officer_id
+;
+
+-- Officer aggregated complaint information
+SELECT
+	  officer_id
+	, MIN(date_received) AS earliest_complaint_received
+	, MAX(date_received) AS latest_complaint_received
+	, COUNT(DISTINCT complaint_id) AS num_complaints
+	, COUNT(complaint_id) AS num_charges
+FROM complaints
+GROUP BY officer_id
+ORDER BY officer_id
+;
