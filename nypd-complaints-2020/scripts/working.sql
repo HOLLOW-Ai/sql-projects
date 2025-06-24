@@ -69,7 +69,8 @@ CREATE TABLE complaints (
 	precinct INT,
 	contact_reason NVARCHAR(100),
 	outcome_description NVARCHAR(100),
-	board_disposition NVARCHAR(100)
+	board_disposition NVARCHAR(100),
+	board_disposition_short NVARCHAR(30)
 	)
 ;
 
@@ -99,14 +100,15 @@ SELECT
 	  END AS officer_gender
 	, TRIM(officer_age_incident) AS officer_age_incident
 	, TRIM(complainant_ethnicity) AS complainant_ethnicity
-	, TRIM(complainant_gender) AS complainant_gender -- Standardize how gender is entered
+	, TRIM(complainant_gender) AS complainant_gender
 	, TRIM(complainant_age_incident) AS complainant_age_incident
 	, TRIM(fado_type) AS fado_type
 	, TRIM(allegation) AS allegation
 	, TRY_CAST(precinct AS INT) AS precinct
 	, TRIM(contact_reason) AS contact_reason
-	, TRIM(outcome_description) AS contact_reason
-	, TRIM(board_disposition) AS contact_reason
+	, TRIM(outcome_description) AS outcome_description
+	, TRIM(board_disposition) AS board_disposition
+	, CASE WHEN TRIM(board_disposition) LIKE 'Substantiated%' THEN 'Substantiated' ELSE TRIM(board_disposition) END AS board_disposition_short
 FROM complaints_raw
 ;
 
