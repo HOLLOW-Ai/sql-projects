@@ -17,8 +17,8 @@ IF OBJECT_ID ('synthea_schema.allergies', 'U') IS NOT NULL
 CREATE TABLE synthea_schema.allergies (
   "start"      DATE,
   stop         DATE,
-  patient      NVARCHAR(255),
-  encounter    NVARCHAR(255),
+  patient      NVARCHAR(255), -- FK to Patients
+  encounter    NVARCHAR(255), -- FK to Encounters
   code         NVARCHAR(255),
   system       NVARCHAR(255),
   description  NVARCHAR(255),
@@ -32,75 +32,112 @@ CREATE TABLE synthea_schema.allergies (
   severity2    NVARCHAR(255),
 );
 
---HINT DISTRIBUTE_ON_RANDOM
-create table @synthea_schema.careplans (
-id            varchar(1000),
-"start"         date,
-stop          date,
-patient       varchar(1000),
-encounter     varchar(1000),
-code          varchar(100),
-description   varchar(255),
-reasoncode   varchar(255),
-reasondescription   varchar(255)
+
+-- Care Plans
+IF OBJECT_ID ('synthea_schema.careplans', 'U') IS NOT NULL
+  DROP TABLE synthea_schema.careplans;
+
+CREATE TABLE synthea_schema.careplans (
+  id                  NVARCHAR(255), -- PK
+  "start"             DATE,
+  stop                DATE,
+  patient             NVARCHAR(255), -- FK to Patients
+  encounter           NVARCHAR(255), -- FK to Encounters
+  code                NVARCHAR(255),
+  description         NVARCHAR(255),
+  reasoncode          NVARCHAR(255),
+  reasondescription   NVARCHAR(255)
 );
 
---HINT DISTRIBUTE_ON_RANDOM
-create table @synthea_schema.conditions (
-"start"         date,
-stop          date,
-patient       varchar(1000),
-encounter     varchar(1000),
-system      varchar(1000),
-code          varchar(100),
-description   varchar(255)
+
+-- Conditions
+IF OBJECT_ID ('synthea_schema.conditions', 'U') IS NOT NULL
+  DROP TABLE synthea_schema.conditions;
+
+CREATE TABLE synthea_schema.conditions (
+  "start"       DATE,
+  stop          DATE,
+  patient       NVARCHAR(255), -- FK to Patients
+  encounter     NVARCHAR(255), -- FK to Encounters
+  system        NVARCHAR(255),
+  code          NVARCHAR(255),
+  description   NVARCHAR(255),
 );
 
---HINT DISTRIBUTE_ON_RANDOM
-create table @synthea_schema.encounters (
-id            		varchar(1000),
-"start"         		date,
-stop							date,
-patient       		varchar(1000),
-organization   		varchar(1000),
-provider			varchar(1000),
-payer			varchar(1000),
-encounterclass		varchar(1000),
-code          		varchar(100),
-description   		varchar(255),
-base_encounter_cost numeric,
-total_claim_cost		numeric,
-payer_coverage		numeric,
-reasoncode   			varchar(100),
-reasondescription varchar(255)
+
+-- Devices
+IF OBJECT_ID ('synthea_schema.devices', 'U') IS NOT NULL
+  DROP TABLE synthea_schema.devices;
+
+CREATE TABLE synthea_schema.devices (
+  "start"       DATE,
+  stop          DATE,
+  patient       NVARCHAR(255),
+  encounter     NVARCHAR(255),
+  code          NVARCHAR(255),
+  description   NVARCHAR(255),
+  udi           NVARCHAR(255)
 );
 
---HINT DISTRIBUTE_ON_RANDOM
-create table @synthea_schema.immunizations (
-"date"        date,
-patient       varchar(1000),
-encounter     varchar(1000),
-code          varchar(100),
-description   varchar(255),
-base_cost	numeric
+
+-- Encounters
+IF OBJECT_ID ('synthea_schema.encounters', 'U') IS NOT NULL
+  DROP TABLE synthea_schema.encounters;
+
+CREATE TABLE synthea_schema.encounters (
+  id            		NVARCHAR(255), -- PK
+  "start"         		DATETIME, -- This is a UTC Date in the CSV file, changing DATE to DATETIME
+  stop							  DATETIME,
+  patient       		  NVARCHAR(255), -- FK to Patients
+  organization   		  NVARCHAR(255), -- FK to Organization
+  provider			      NVARCHAR(255), -- FK to Provider
+  payer			          NVARCHAR(255), -- FK to Payer
+  encounterclass		  NVARCHAR(255),
+  code          		  NVARCHAR(255),
+  description   		  NVARCHAR(255),
+  base_encounter_cost DECIMAL(10, 2), -- I'm not presuming the precision of the cost to matter much in cents, so I'll be swapping NUMERIC for DECIMAL
+  total_claim_cost		DECIMAL(10, 2),
+  payer_coverage		  DECIMAL(10, 2),
+  reasoncode   			  NVARCHAR(255),
+  reasondescription   NVARCHAR(255),
 );
 
---HINT DISTRIBUTE_ON_RANDOM
-create table @synthea_schema.imaging_studies (
-id			  varchar(1000),
-"date"        date,
-patient					varchar(1000),
-encounter				varchar(1000),
-series_uid			varchar(1000),
-bodysite_code			varchar(100),
-bodysite_description		varchar(255),
-modality_code			varchar(100),
-modality_description		varchar(255),
-instance_uid			varchar(1000),
-SOP_code					varchar(100),
-SOP_description			varchar(255),
-procedure_code			varchar(255)
+
+-- Imaging Studies
+IF OBJECT_ID ('synthea_schema.imaging_studies', 'U') IS NOT NULL
+  DROP TABLE synthea_schema.imaging_studies;
+
+CREATE TABLE synthea_schema.imaging_studies (
+  id			                NVARCHAR(255), -- Not unique, imaging study can have multiple rows
+  "date"                  DATETIME, -- In ISO8601 format
+  patient					        NVARCHAR(255), -- FK to Patient
+  encounter				        NVARCHAR(255), -- FK to Encounter
+  series_uid			        NVARCHAR(255),
+  bodysite_code			      NVARCHAR(255),
+  bodysite_description		NVARCHAR(255),
+  modality_code			      NVARCHAR(255),
+  modality_description		NVARCHAR(255),
+  instance_uid			      NVARCHAR(255),
+  SOP_code					      NVARCHAR(255),
+  SOP_description			    NVARCHAR(255),
+  procedure_code			    NVARCHAR(255)
 );
+
+
+-- Immunizations
+IF OBJECT_ID ('synthea_schema.immunizations', 'U') IS NOT NULL
+  DROP TABLE synthea_schema.immunizations;
+
+CREATE TABLE synthea_schema.immunizations (
+  "date"        DATETIME, -- In ISO8601 format
+  patient       NVARCHAR(255), -- FK to Patient
+  encounter     NVARCHAR(255), -- FK to Encounter
+  code          NVARCHAR(255),
+  description   NVARCHAR(255),
+  base_cost	    DECIMAL(10, 2)
+);
+
+
 
 --HINT DISTRIBUTE_ON_RANDOM
 create table @synthea_schema.medications (
@@ -210,16 +247,7 @@ encounters int,
 "procedures" int
 );
 
---HINT DISTRIBUTE_ON_RANDOM
-create table @synthea_schema.devices (
-"start"         date,
-stop          date,
-patient       varchar(1000),
-encounter     varchar(1000),
-code          varchar(100),
-description   varchar(255),
-udi           varchar(255)
-);
+
 
 
 
