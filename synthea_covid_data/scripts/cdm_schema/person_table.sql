@@ -1,0 +1,25 @@
+IF OBJECT_ID ('cdm_schema.person', 'U') IS NOT NULL
+  DROP TABLE cdm_schema.person;
+
+-- I'll create all the columns for the ETL-Synthea builder for now
+CREATE TABLE cdm_schema.person (
+  person_id INT,
+  gender_concept_id INT,
+  year_of_birth INT,
+  month_of_birth INT,
+  day_of_birth INT,
+  birth_datetime DATETIME,
+  death_datetime DATETIME
+  race_concept_id INT,
+  ethnicity_concept_id INT,
+  location_id INT,
+  provider_id INT,
+  care_site_id INT,
+  person_source_value NVARCHAR(50),
+  gender_source_value NVARCHAR(50),
+  gender_source_concept_id INT,
+  race_source_value NVARCHAR(50),
+  race_source_concept_id INT,
+  ethnicity_source_value NVARCHAR(50),
+  ethnicity_source_concept_id INT
+);
