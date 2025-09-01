@@ -12,6 +12,14 @@ Order to build the CDM tables:
 3. visit_occurrence
 4. Other tables because they rely on the visit_occurrence_id
 
+# Reference Links
+- https://ohdsi.github.io/TheBookOfOhdsi/CommonDataModel.html#cdm-standardized-tables
+- https://ohdsi.github.io/ETL-Synthea/index.html
+- https://github.com/OHDSI/ETL-Synthea/tree/main/inst/sql/sql_server/cdm_version/v540
+- https://ohdsi.github.io/CommonDataModel/cdm54.html#person
+- https://ohdsi.github.io/Themis/death.html
+
+
 # Person
 Tables needed:
 - Patients (Synthea)
