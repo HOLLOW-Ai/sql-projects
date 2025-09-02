@@ -2,13 +2,13 @@ IF OBJECT_ID ('cdm_schema.observation', 'U') IS NOT NULL
   DROP TABLE cdm_schema.observation;
 
 CREATE TABLE cdm_schema.observation (
-  observation_id INT, -- Autogen
-  person_id INT,
+  observation_id INT IDENTITY(1, 1) NOT NULL, -- Autogen
+  person_id INT NOT NULL,
   -- observation_concept_id INT,
   observation_date DATE,
   observation_datetime DATETIME,
   observation_type_concept_id INT DEFAULT 38000280,
-  value_as_number DECIMAL(6, 2), -- Check later
+  value_as_number FLOAT, -- Check later
   value_as_string NVARCHAR(60),
   value_as_concept_id INT DEFAULT 0,
   qualifier_concept_id INT DEFAULT 0,
