@@ -60,8 +60,9 @@ SELECT
     WHEN 'ASIAN' THEN 8515
     ELSE 0
   END, -- race_concept_id
-  CASE UPPER(P.race)
+  CASE UPPER(P.ethnicity)
     WHEN 'HISPANIC' THEN 38003563
+    WHEN 'NONHISPANIC' THEN 38003564
     ELSE 0
   END, -- ethnicity_concept_id
   NULL, -- location_id
