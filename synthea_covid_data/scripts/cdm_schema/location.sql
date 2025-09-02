@@ -14,3 +14,29 @@ CREATE TABLE cdm_schema.location (
   latitude DECIMAL(9, 6),
   longitude DECIMAL(9, 6)
 );
+
+INSERT INTO cdm_schema.location (
+  location_id,
+  address_1,
+  address_2,
+  city,
+  state,
+  county,
+  zip,
+  location_source_value,
+  latitude,
+  longitude
+)
+SELECT 
+  ROW_NUMBER() OVER (ORDER BY P.city, P.state, P.zip), -- location_id
+  CAST(NULL AS NVARCHAR), -- address_1
+  CAST(NULL AS NVARCHAR), -- address_2
+  P.city, -- city
+  P.state, -- state
+  P.county, -- county
+  P.zip, -- zip
+  P.zip, -- location_source_value
+  P.lat, -- latitude
+  P.lon -- longitude
+FROM synthea_schema.patients AS P
+;
