@@ -2,8 +2,8 @@ IF OBJECT_ID ('cdm_schema.condition_occurrence', 'U') IS NOT NULL
   DROP TABLE cdm_schema.condition_occurrence;
 
 CREATE TABLE cdm_schema.condition_occurrence (
-  condition_occurrence_id INT, -- Autogen
-  person_id INT,
+  condition_occurrence_id INT IDENTITY(1, 1) NOT NULL, -- Autogen
+  person_id INT NOT NULL,
   -- condition_concept_id INT, -- Dont have the Vocab table
   condition_start_date DATE,
   condition_start_datetime DATETIME,
