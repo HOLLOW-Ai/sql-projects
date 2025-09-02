@@ -2,8 +2,8 @@ IF OBJECT_ID ('cdm_schema.visit_occurrence', 'U') IS NOT NULL
   DROP TABLE cdm_schema.visit_occurrence;
 
 CREATE TABLE cdm_schema.visit_occurrence (
-  visit_occurrence_id INT,
-  person_id INT,
+  visit_occurrence_id INT NOT NULL,
+  person_id INT NOT NULL,
   visit_concept_id INT,
   visit_start_date DATE,
   visit_start_datetime DATETIME,
@@ -11,7 +11,7 @@ CREATE TABLE cdm_schema.visit_occurrence (
   visit_end_datetime DATETIME,
   visit_type_concept_id INT,
   provider_id INT,
-  care_site_id INT DEFAULT NULL,
+  care_site_id INT,
   visit_source_value NVARCHAR(50),
   visit_source_concept_id INT,
   admitted_from_concept_id INT,
