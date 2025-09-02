@@ -2,8 +2,8 @@ IF OBJECT_ID ('cdm_schema.cost', 'U') IS NOT NULL
   DROP TABLE cdm_schema.cost;
 
 CREATE TABLE cdm_schema.cost (
-  cost_id INT, -- Autogen
-  cost_event_id INT,
+  cost_id INT IDENTITY(1, 1) NOT NULL, -- Autogen
+  cost_event_id INT NOT NULL,
   cost_domain_id NVARCHAR(20),
   cost_type_concept_id INT,
   currency_concept_id INT,
@@ -18,7 +18,7 @@ CREATE TABLE cdm_schema.cost (
   paid_by_primary DECIMAL(8, 2),
   paid_ingredient_cost DECIMAL(8, 2),
   paid_dispensing_fee DECIMAL(8, 2),
-  payer_plan_period INT,
+  payer_plan_period_ID INT,
   amount_allowed DECIMAL(8, 2),
   revenue_code_concept_id INT,
   revenue_code_source_value NVARCHAR(50),
