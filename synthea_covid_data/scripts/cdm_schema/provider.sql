@@ -2,7 +2,7 @@ IF OBJECT_ID ('cdm_schema.provider', 'U') IS NOT NULL
   DROP TABLE cdm_schema.provider;
 
 CREATE TABLE cdm_schema.provider (
-  provider_id INT, -- Autogen
+  provider_id INT IDENTITY(1, 1) NOT NULL, -- Autogen
   provider_name NVARCHAR(255),
   npi NVARCHAR(20),
   dea NVARCHAR(20),
