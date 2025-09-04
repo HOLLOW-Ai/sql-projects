@@ -66,3 +66,69 @@ FROM loading;
 
 -- Added data
 -- 2025
+
+
+-- Staging Data
+	-- 2024: 14,446,679 rows raw; 1,735,955 distinct
+	-- 2023: 10,180,283 rows raw; 1,807,218 distinct
+	-- 2022: 17,639,430 rows raw; 1,861,674 distinct
+	-- 2021: 17,725,364 rows raw; 1,665,362 distinct
+	-- 2020: 17,487,259 rows raw; 1,661,134 distinct
+
+WITH distinct_cnt AS (
+	SELECT DISTINCT *
+	FROM staging
+)
+SELECT COUNT(*)
+FROM distinct_cnt
+;
+
+
+-- Loading
+INSERT INTO loading (
+	  bibnum
+	, title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, item_type
+	, item_col
+	, item_loc
+)
+SELECT DISTINCT
+	  bibnum
+	, title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, item_type
+	, item_col
+	, item_loc
+FROM staging
+;
+
+SELECT COUNT(*)
+FROM loading;
+
+-- Data
+-- Without 2020 data, 2,739,958 distinct rows
+WITH distinct_load AS (
+	SELECT DISTINCT *
+	FROM loading
+)
+SELECT COUNT(*)
+FROM distinct_load
+;
+
+-- Delete Duplicate Rows from 'loading'
+WITH cte_del AS (
+SELECT
+	  *
+	, ROW_NUMBER() OVER (PARTITION BY bibnum, title, author, isbn, pub_year, publisher, item_type, item_col, item_loc ORDER BY bibnum) AS rn
+FROM loading
+)
+DELETE cte_del
+WHERE rn > 1
+;
