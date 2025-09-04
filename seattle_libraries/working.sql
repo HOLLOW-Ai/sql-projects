@@ -132,3 +132,41 @@ FROM loading
 DELETE cte_del
 WHERE rn > 1
 ;
+
+
+SELECT TOP 100 *
+FROM loading
+;
+
+-- 375,722 rows returned total
+SELECT TOP 10
+	bibnum
+	, COUNT(*) AS num
+FROM loading
+GROUP BY bibnum
+HAVING COUNT(*) > 1
+;
+
+-- Differences arise from item_col and item_loc
+SELECT *
+FROM loading
+WHERE bibnum IN (3511456, 3156174, 1736578, 3171494, 3519116, 2808552, 3731922, 3384300)
+ORDER BY bibnum, item_type, item_col, item_loc
+;
+
+/*
+	Info on columns
+	=====================================
+
+	ItemCollection (item_col): Collection code for this item. Value descriptions can be found in Integrated LIbrary System (ILS) Data Dictionary
+
+	ItemLocation (item_loc): Location that owned the item at the time of snapshot. 3-letter code. This can be changed depending on where the item is returned.
+*/
+
+/*
+	ILS Data Dictionary
+	=======================
+	To Do:
+		- There's a row for each ItemCollection, ItemType, Location codes
+		- Need to separate it into tables and Unpivot
+*/
