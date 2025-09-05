@@ -298,7 +298,7 @@ FROM loading;
 
 /*
 	=================================
-	Data Check for loading
+	Data Check for loading (catalog of books that have been recorded in inventory)
 	=================================
 
 	CREATE TABLE loading (
@@ -326,3 +326,21 @@ SELECT
 	, MAX(LEN(item_col))
 	, MAX(LEN(item_loc))
 FROM loading;
+
+/*
+	===================================
+	To Do
+	===================================
+
+	Data Cleaning
+	- Make sure no white spaces (TRIM)
+	- Make sure the necessary columns have an ID; no NULLs
+
+	After Cleaning
+	- Load into Silver layer, with necessary adjustments to table creation (rename columns, change sizes of values, remove checkout_year?)
+	- Create Gold layer
+	- Plan out how to unpivot the Data Dictionary table
+	- Clear out Bronze layer because of storage reasons
+	- Create columns necessary for analysis
+	- If needed, export Silver layer tables to CSV if storage runs out
+*/
