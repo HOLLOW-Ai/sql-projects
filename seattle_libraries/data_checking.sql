@@ -45,10 +45,11 @@ WHERE LOWER(code) != LOWER(TRIM(code))
 WITH item_col_tbl AS (
 	SELECT *
 	FROM bronze.dictionary
-	WHERE code_type != 'Location'
+	WHERE code_type = 'Location'
 )
 SELECT *
 FROM item_col_tbl
+WHERE code = 'cen'
 ;
 
 -- Keep description as is
@@ -88,6 +89,9 @@ HAVING COUNT(*) > 1
 		- Get the new Key into the Checkouts table by joining on BibNumber and Collection
 	- Some of the titles and authors have inconsistencies, but just join on bibnum; get rid of dupes using ROW_NUMBER() and CTE
 	- Do TRIM(), LOWER() on the titles and author if necessary
+	- Split author name by delimiter
+	- Drop Location, but keep the Collection
+	- Order by ISBN and get rid of duplicates by ROW_NUMBER() OVER (PARTITION BY bibnum, item_type, item_col ORDER BY isbn DESC)
 	
 */
 
@@ -130,4 +134,68 @@ WHERE bibnum IN (
 	HAVING COUNT(*) > 1
 )
 ORDER BY bibnum
+;
+
+-- Multiple rows where you have multiple bibnum with multiple isbn
+
+WITH bibnum_isbn AS (
+SELECT DISTINCT
+	bibnum
+	, isbn
+FROM loading
+), cte2 AS (
+	SELECT bibnum, COUNT(*) AS cnt
+	FROM bibnum_isbn
+	GROUP BY bibnum
+	HAVING COUNT(*) > 1
+)
+SELECT *
+FROM cte2;
+--SELECT DISTINCT TOP 100 bibnum, isbn
+--FROM loading
+--WHERE bibnum IN (SELECT bibnum FROM cte2)
+--ORDER BY bibnum;
+
+-- Why does Suzume 1 and Suzume 3 have the same bibnum??
+SELECT *, ROW_NUMBER() OVER (PARTITION BY bibnum, item_type, item_col ORDER BY isbn DESC) AS rn
+FROM loading
+WHERE bibnum IN (1702, 8489, 4031834, 3470, 8157, 11614, 13917, 19786)
+;
+
+-- Looks like someone incorrectly put Suzume 3 with the same bibnum as Suzume 1 in April 2025
+
+SELECT *
+FROM loading
+WHERE author = 'Shinkai, Makoto'
+ORDER BY bibnum
+;
+
+SELECT DISTINCT bibnum, author, isbn
+FROM loading
+WHERE bibnum = 4031834
+;
+
+-- ISBN null, item_col and item_loc differ
+-- Could indicate multiple copies of this book existing in the inventory
+SELECT *, ROW_NUMBER() OVER (PARTITION BY bibnum, item_type, item_col ORDER BY isbn DESC)
+FROM loading
+WHERE bibnum = 1702
+;
+
+SELECT DISTINCT *
+FROM loading
+WHERE bibnum = 3470
+ORDER BY isbn DESC
+;
+
+-- Spelling diff of title, isbn has 1+, pub_year weird format, publisher spelling diff
+SELECT DISTINCT *
+FROM loading
+WHERE bibnum = 8157
+;
+
+-- Spelling diff of Author
+SELECT DISTINCT *
+FROM loading
+WHERE bibnum = 19786
 ;
