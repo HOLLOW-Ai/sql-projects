@@ -199,3 +199,56 @@ SELECT DISTINCT *
 FROM loading
 WHERE bibnum = 19786
 ;
+
+SELECT *, ROW_NUMBER() OVER (PARTITION BY bibnum, isbn, item_type, item_col ORDER BY isbn DESC) AS rn
+FROM loading
+WHERE bibnum IN (1702, 8489, 4031834, 3470, 8157, 11614, 13917, 19786)
+;
+
+
+
+/*  =====================
+	Checkouts Table
+    =====================
+	- 
+	
+*/
+
+SELECT TOP 10 *
+FROM bronze.checkouts;
+
+-- Multiple id's show up
+SELECT TOP 5 id
+FROM bronze.checkouts
+GROUP BY id
+HAVING COUNT(*) > 1
+;
+
+SELECT *
+FROM bronze.checkouts
+WHERE id IN ('202303290802000010107757345', '202303290810000010104848691', '202303290937000010102444055', '202303290939000010093342136', '202303290939000010107019035')
+ORDER BY id
+;
+
+-- 16,938,644 vs 16,614,613
+SELECT COUNT(*), COUNT(DISTINCT id)
+FROM bronze.checkouts;
+
+-- 16,146,613 records return, remove when moving to new table
+WITH distinct_recs AS (
+	SELECT DISTINCT *
+	FROM bronze.checkouts
+)
+SELECT COUNT(*)
+FROM distinct_recs
+;
+
+SELECT *
+FROM bronze.checkouts
+WHERE LOWER(item_title) != LOWER(TRIM(item_title))
+;
+
+SELECT *
+FROM bronze.checkouts
+WHERE LEN(item_title) != LEN(TRIM(item_title))
+;
