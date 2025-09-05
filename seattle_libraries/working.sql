@@ -230,3 +230,99 @@ FROM bronze.checkouts;
 
 SELECT *
 FROM INFORMATION_SCHEMA.TABLES;
+
+/*
+	=================================
+	Data Check for bronze.dictionary
+	=================================
+
+	CREATE TABLE silver.dictionary (
+	  code NVARCHAR(20)
+	, description NVARCHAR(100)
+	, code_type NVARCHAR(25)
+	, format_group NVARCHAR(20)
+	, format_subgroup NVARCHAR(20)
+	, cat_group NVARCHAR(25)
+	, cat_subgroup NVARCHAR(20)
+	, age_group NVARCHAR(20)
+	);
+
+*/
+
+SELECT
+	  MAX(LEN(code))
+	, MAX(LEN(description))
+	, MAX(LEN(code_type))
+	, MAX(LEN(format_group))
+	, MAX(LEN(format_subgroup))
+	, MAX(LEN(cat_group))
+	, MAX(LEN(cat_subgroup))
+	, MAX(LEN(age_group))
+FROM bronze.dictionary;
+
+SELECT DISTINCT age_group
+FROM bronze.dictionary;
+
+
+/*
+	=================================
+	Data Check for bronze.checkouts
+	=================================
+
+	CREATE TABLE silver.checkouts (
+		  id NVARCHAR(50)
+		, checkout_year INT
+		, bibnum INT
+		, item_type NVARCHAR(10)
+		, collection NVARCHAR(10)
+		, item_title NVARCHAR(400)
+		, checkout_datetime DATETIME
+	);
+
+*/
+
+SELECT
+	  MAX(LEN(id))
+	, MAX(LEN(checkout_year))
+	, MAX(LEN(bibnum))
+	, MAX(LEN(item_type))
+	, MAX(LEN(collection))
+	, MAX(LEN(item_title))
+	, MAX(LEN(checkout_datetime))
+FROM bronze.checkouts;
+
+SELECT TOP 10 *
+FROM loading;
+
+
+
+/*
+	=================================
+	Data Check for loading
+	=================================
+
+	CREATE TABLE loading (
+		  bibnum INT
+		, title NVARCHAR(3000)
+		, author NVARCHAR(500)
+		, isbn NVARCHAR(200)
+		, pub_year NVARCHAR(500)
+		, publisher NVARCHAR(500)
+		, item_type NVARCHAR(10)
+		, item_col NVARCHAR(10)
+		, item_loc NVARCHAR(10)
+	);
+
+*/
+
+SELECT
+	  MAX(LEN(bibnum))
+	, MAX(LEN(title))
+	, MAX(LEN(author))
+	, MAX(LEN(isbn))
+	, MAX(LEN(pub_year))
+	, MAX(LEN(publisher))
+	, MAX(LEN(item_type))
+	, MAX(LEN(item_col))
+	, MAX(LEN(item_loc))
+FROM loading;
