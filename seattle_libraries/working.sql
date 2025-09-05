@@ -170,3 +170,63 @@ ORDER BY bibnum, item_type, item_col, item_loc
 		- There's a row for each ItemCollection, ItemType, Location codes
 		- Need to separate it into tables and Unpivot
 */
+
+USE library;
+
+CREATE SCHEMA bronze;
+
+SELECT COUNT(*)
+FROM staging;
+
+DROP TABLE staging;
+
+CREATE TABLE bronze.dictionary (
+	  code NVARCHAR(50)
+	, description NVARCHAR(255)
+	, code_type NVARCHAR(50)
+	, format_group NVARCHAR(50)
+	, format_subgroup NVARCHAR(50)
+	, cat_group NVARCHAR(50)
+	, cat_subgroup NVARCHAR(50)
+	, age_group NVARCHAR(25)
+);
+
+BULK INSERT bronze.dictionary
+FROM '\Integrated_Library_System_(ILS)_Data_Dictionary_20250902.csv'
+WITH (
+		FIELDTERMINATOR = ',',
+		ROWTERMINATOR = '0x0A',
+		FIRSTROW = 2,
+		FORMAT = 'CSV' -- Needed to remove the quotes
+);
+
+SELECT *
+FROM bronze.dictionary;
+
+
+DROP TABLE bronze.checkouts;
+
+CREATE TABLE bronze.checkouts (
+	  id NVARCHAR(MAX)
+	, checkout_year INT
+	, bibnum INT
+	, item_type NVARCHAR(MAX)
+	, collection NVARCHAR(MAX)
+	, item_title NVARCHAR(MAX)
+	, checkout_datetime DATETIME
+);
+
+BULK INSERT bronze.checkouts
+FROM 'Checkouts_By_Title_(Physical_Items)_20250904.csv'
+WITH (
+		FIELDTERMINATOR = ',',
+		ROWTERMINATOR = '0x0A',
+		FIRSTROW = 2,
+		FORMAT = 'CSV' -- Needed to remove the quotes
+);
+
+SELECT TOP 50 *
+FROM bronze.checkouts;
+
+SELECT *
+FROM INFORMATION_SCHEMA.TABLES;
