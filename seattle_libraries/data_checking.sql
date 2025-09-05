@@ -252,3 +252,28 @@ SELECT *
 FROM bronze.checkouts
 WHERE LEN(item_title) != LEN(TRIM(item_title))
 ;
+
+SELECT TOP 10 bibnum
+FROM bronze.checkouts;
+
+CREATE SCHEMA silver;
+
+
+-- Load checkouts into the Silver schema
+WITH distinct_recs AS (
+	SELECT DISTINCT *
+	FROM bronze.checkouts
+)
+SELECT
+	  id
+	, checkout_year
+	, bibnum
+	, item_type
+	, collection
+	, item_title
+	, checkout_datetime
+INTO silver.checkouts
+FROM distinct_recs;
+
+-- Dropping it for the consideration of my storage
+DROP TABLE bronze.checkouts;
