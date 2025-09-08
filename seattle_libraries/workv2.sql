@@ -207,3 +207,94 @@ FROM reduced_tbl
 
 SELECT *
 FROM silver.catalog;
+
+SELECT *
+FROM silver.catalog
+GROUP BY title
+HAVING COUNT(*) > 1
+ORDER BY bibnum;
+
+SELECT *
+FROM silver.catalog
+WHERE bibnum = 4031834;
+
+-- Bibnums have rows where the only filled data is the bibnum and item_type, and next record for the same Bibnum has all the info filled out
+-- Maybe create a another table in a CTE or whatever with filtering to make sure no data is missing and then join to use COALESCE()
+-- LAG and LEAD? Combined with CASE WHEN and COALESCE
+SELECT *, ROW_NUMBER() OVER (PARTITION BY bibnum ORDER BY bibnum) AS rn
+FROM silver.catalog
+WHERE bibnum IN (
+	SELECT bibnum
+	FROM silver.catalog
+	WHERE isbn IS NULL
+	GROUP BY bibnum
+)
+ORDER BY isbn DESC, bibnum, rn;
+
+SELECT *
+FROM silver.catalog
+WHERE title IS NULL;
+
+SELECT *
+FROM silver.catalog
+WHERE bibnum = 1271782;
+
+-- 889,278 rows vs 857,586 distinct IDs: 31,692 difference
+SELECT COUNT(*)
+FROM silver.catalog;
+
+SELECT COUNT(DISTINCT bibnum)
+FROM silver.catalog;
+
+
+-- This returns 30,438 BibNums have multiple records
+-- 827,148 items have its BibNum show up only once
+
+WITH cte2 AS (
+SELECT DISTINCT
+	  bibnum
+	, title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, item_type
+	, ROW_NUMBER() OVER (PARTITION BY bibnum ORDER BY isbn DESC) AS rn
+FROM silver.catalog
+WHERE bibnum IN (
+					SELECT bibnum
+					FROM silver.catalog
+					GROUP BY bibnum
+					HAVING COUNT(*) > 1
+				)
+)
+SELECT DISTINCT T1.bibnum, T1.title, T2.bibnum, T2.title
+FROM cte2 T1
+INNER JOIN cte2 T2
+	ON T1.bibnum = T2.bibnum
+WHERE T1.title != T2.title AND T1.title < T2.title
+ORDER BY T1.bibnum;
+
+
+
+/*
+	Union to combine the items with 1 rows with the items with multiple records after I figure out how to de-duplicate, combine them
+
+	SELECT
+		  bibnum
+		, title
+		, author
+		, isbn
+		, pub_year
+		, publisher
+		, item_type
+	FROM silver.catalog
+	WHERE bibnum IN (
+						SELECT bibnum
+						FROM silver.catalog
+						GROUP BY bibnum
+						HAVING COUNT(*) = 1
+					)
+
+	UNION
+*/
