@@ -268,12 +268,19 @@ WHERE bibnum IN (
 					HAVING COUNT(*) > 1
 				)
 )
-SELECT DISTINCT T1.bibnum, T1.title, T2.bibnum, T2.title
+SELECT T1.bibnum, T1.title, T1.item_type, T2.bibnum, T2.title, T2.item_type
 FROM cte2 T1
 INNER JOIN cte2 T2
-	ON T1.bibnum = T2.bibnum
-WHERE T1.title != T2.title AND T1.title < T2.title
-ORDER BY T1.bibnum;
+	ON T1.title = T2.title
+	AND T1.item_type = T2.item_type
+WHERE T1.bibnum != T2.bibnum
+--SELECT DISTINCT T1.bibnum, T1.title, T2.bibnum, T2.title
+--FROM cte2 T1
+--INNER JOIN cte2 T2
+--	ON T1.bibnum = T2.bibnum
+--WHERE T1.title != T2.title AND T1.title < T2.title
+--ORDER BY T1.bibnum
+--;
 
 
 
