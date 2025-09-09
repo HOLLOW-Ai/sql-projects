@@ -155,3 +155,46 @@ WHERE T1.rn = 1
 ;
 
 -- Create a CTE where i group by BibNum and find the MAX() value for each column, and then use another CTE to combine it to the Main query to COALESCE() if any information is missing
+SELECT TOP 1000
+	  bibnum
+	, MAX(title)
+	, MAX(author)
+	, MAX(isbn)
+	, MAX(pub_year)
+	, MAX(publisher)
+FROM bronze.raw_inv
+GROUP BY bibnum;
+
+SELECT TOP 1000
+	  bibnum
+	, MAX(report_date) AS latest_date
+FROM bronze.raw_inv
+GROUP BY bibnum;
+
+
+-- Do I include 'item_type' as something to partition by?
+-- Check the item_types that have NULL values typically for isbn, or other missing info
+WITH latest_report AS (
+SELECT
+	  bibnum
+	, title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, item_type
+	, item_col
+	, report_date
+	, ROW_NUMBER() OVER (PARTITION BY bibnum ORDER BY report_date DESC) AS rownum
+FROM bronze.raw_inv
+)
+SELECT *
+FROM latest_report
+WHERE rownum = 1;
+
+SELECT *
+FROM bronze.raw_inv
+WHERE rownum = 1;
+
+SELECT DISTINCT item_type
+FROM bronze.raw_inv;
