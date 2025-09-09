@@ -111,15 +111,47 @@ FROM bronze.raw_inv;
 
 --SELECT 375772 + 481814
 
-SELECT TOP 1000
-	  bibnum
-	, title
-	, author
-	, isbn
-	, pub_year
-	, publisher
-	, item_type
-	, item_col
-	, report_date
-	, ROW_NUMBER() OVER (PARTITION BY bibnum ORDER BY report_date DESC) AS rn
-FROM bronze.raw_inv;
+-- Let's see the rows that have other rows with NULL info using a self join
+WITH cte2 AS (
+	SELECT
+		  bibnum
+		, title
+		, author
+		, isbn
+		, pub_year
+		, publisher
+		, item_type
+		, item_col
+		, report_date
+		, ROW_NUMBER() OVER (PARTITION BY bibnum ORDER BY report_date DESC) AS rn
+	FROM bronze.raw_inv
+)
+SELECT TOP 100
+	  T1.bibnum
+	, T1.title
+	, T1.author
+	, T1.isbn
+	, T1.pub_year
+	, T1.publisher
+	, T1.item_type
+	, T1.item_col
+	, T1.report_date
+	, T2.title
+	, T2.author
+	, T2.isbn
+	, T2.pub_year
+	, T2.publisher
+	, T2.item_type
+	, T2.item_col
+	, T2.report_date
+FROM cte2 T1
+INNER JOIN cte2 T2
+	ON T1.bibnum = T2.bibnum
+	AND T1.rn < T2.rn
+	AND (
+			T2.title IS NULL OR T2.author IS NULL OR T2.isbn IS NULL OR T2.pub_year IS NULL OR T2.item_type IS NULL OR T2.item_col IS NULL
+		)
+WHERE T1.rn = 1
+;
+
+-- Create a CTE where i group by BibNum and find the MAX() value for each column, and then use another CTE to combine it to the Main query to COALESCE() if any information is missing
