@@ -1,5 +1,8 @@
 USE library;
 
+-- Runtime 1:36 w/ Index on Bibnum
+-- Runtime 1:35 w/ Index on Bibnum + Report_Date
+-- Cancelled the query, but runtime is 2+ min on index of BibNum + Item_Type
 WITH info AS (
 	SELECT 
 		  bibnum
