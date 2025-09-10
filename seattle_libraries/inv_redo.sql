@@ -198,3 +198,210 @@ WHERE rownum = 1;
 
 SELECT DISTINCT item_type
 FROM bronze.raw_inv;
+
+
+WITH items AS (
+SELECT DISTINCT item_type
+FROM bronze.raw_inv
+)
+SELECT I.item_type, D.code, D.description
+FROM items I
+LEFT JOIN silver.dictionary D
+	ON I.item_type = D.code
+;
+
+-- 76 diff item_types
+WITH null_isbn AS (
+	SELECT item_type, COUNT(*) AS num_null
+	FROM bronze.raw_inv
+	WHERE isbn IS NULL
+	GROUP BY item_type
+), cte2 AS (
+	SELECT item_type, COUNT(*) AS total_recs
+	FROM bronze.raw_inv
+	GROUP BY item_type
+)
+SELECT T1.item_type, D.description, T2.num_null, ROUND(100.0 * T2.num_null / total_recs, 2) AS prop
+FROM cte2 T1
+LEFT JOIN null_isbn T2
+	ON T1.item_type = T2.item_type
+INNER JOIN silver.dictionary D
+	ON T1.item_type = D.code
+ORDER BY prop
+;
+
+
+SELECT *
+FROM bronze.raw_inv
+WHERE item_type IN ('acrec', 'ucfold');
+
+-- Find the bibnums that have different item_types
+
+WITH test AS (
+SELECT *, ROW_NUMBER() OVER (PARTITION BY bibnum, item_type ORDER BY report_date) AS rn
+FROM bronze.raw_inv
+)
+SELECT *
+FROM test
+WHERE rn = 1
+	AND isbn IS NULL;
+
+
+-- Takes 2:16 for 1000 rows, highest operation cost is a SORT
+-- 7+ min and still executing for all rows
+--WITH filled_info AS (
+--	SELECT 
+--		  bibnum
+--		, MAX(title) AS title
+--		, MAX(author) AS author
+--		, MAX(isbn) AS isbn
+--		, MAX(pub_year) AS pub_year
+--		, MAX(publisher) AS publisher
+--		, item_type
+--	FROM bronze.raw_inv
+--	GROUP BY bibnum, item_type
+--), latest_report AS (
+--	SELECT
+--		  bibnum
+--		, title
+--		, author
+--		, isbn
+--		, pub_year
+--		, publisher
+--		, item_type
+--		, item_col
+--		, report_date
+--		, ROW_NUMBER() OVER (PARTITION BY bibnum ORDER BY report_date DESC) AS rownum
+--	FROM bronze.raw_inv
+--)
+--SELECT
+--	  R.bibnum
+--	, COALESCE(R.title, I.title) AS title
+--	, COALESCE(R.author, I.author) AS author
+--	, COALESCE(R.isbn, I.isbn) AS isbn
+--	, COALESCE(R.pub_year, I.pub_year) AS pub_year
+--	, COALESCE(R.publisher, I.publisher) AS publisher
+--	, R.item_type
+--	, R.report_date
+--FROM latest_report AS R
+--LEFT JOIN filled_info I
+--	ON R.bibnum = I.bibnum
+--	AND R.item_type = I.item_type
+--WHERE R.rownum = 1;
+
+
+
+
+
+
+-- 39 secs for 1000 rows
+-- 2:04 time for 1mil rows
+WITH filled_info AS (
+	SELECT 
+		  bibnum
+		, MAX(title) AS title
+		, MAX(author) AS author
+		, MAX(isbn) AS isbn
+		, MAX(pub_year) AS pub_year
+		, MAX(publisher) AS publisher
+		, item_type
+	FROM bronze.raw_inv
+	GROUP BY bibnum, item_type
+), latest_report AS (
+	SELECT
+		  bibnum
+		, item_type
+		, MAX(report_date) AS latest_date
+		--, ROW_NUMBER() OVER (PARTITION BY bibnum, item_type ORDER BY report_date DESC) AS rownum
+	FROM bronze.raw_inv
+	GROUP BY bibnum, item_type
+)
+SELECT
+	  R.bibnum
+	, COALESCE(R.title, I.title) AS title
+	, COALESCE(R.author, I.author) AS author
+	, COALESCE(R.isbn, I.isbn) AS isbn
+	, COALESCE(R.pub_year, I.pub_year) AS pub_year
+	, COALESCE(R.publisher, I.publisher) AS publisher
+	, R.item_type
+	, R.report_date
+FROM bronze.raw_inv R
+INNER JOIN latest_report L
+	ON R.bibnum = L.bibnum
+	AND R.item_type = L.item_type
+	AND R.report_date = L.latest_date
+INNER JOIN filled_info I
+	ON R.bibnum = I.bibnum
+	AND R.item_type = I.item_type
+;
+
+
+
+
+
+-- Takes 1:38 min, same amount of rows still
+-- Getting a million rows when I should be getting around 870,000 rows
+-- Running the Info CTE returns the 876,246 rows that is expected
+
+-- The issue might be that I need the unique combination of BibNum, Item_Type, and Report_Date instead
+
+-- Now runtime is 1:46 but we have the expected output now
+WITH info AS (
+	SELECT 
+		  bibnum
+		, MAX(title) AS title
+		, MAX(author) AS author
+		, MAX(isbn) AS isbn
+		, MAX(pub_year) AS pub_year
+		, MAX(publisher) AS publisher
+		, item_type
+		, MAX(report_date) AS report_date
+	FROM bronze.raw_inv
+	GROUP BY bibnum, item_type
+), num_rows AS (
+	SELECT
+		  bibnum
+		, title
+		, author
+		, isbn
+		, pub_year
+		, publisher
+		, item_type
+		, report_date
+		, ROW_NUMBER() OVER (PARTITION BY bibnum, item_type ORDER BY report_date DESC) AS rn
+	FROM bronze.raw_inv
+)
+SELECT
+	  R.bibnum
+	, COALESCE(R.title, I.title) AS title
+	, COALESCE(R.author, I.author) AS author
+	, COALESCE(R.isbn, I.isbn) AS isbn
+	, COALESCE(R.pub_year, I.pub_year) AS pub_year
+	, COALESCE(R.publisher, I.publisher) AS publisher
+	, R.item_type
+	, R.report_date
+FROM num_rows R
+INNER JOIN info I
+	ON R.bibnum = I.bibnum
+	AND R.item_type = I.item_type
+	AND R.report_date = I.report_date
+	AND rn = 1
+;
+
+-- There are only distinct rows in the table, at 11,267,263 rows; just use GROUP BY instead of DISTINCT next time
+WITH cte3 AS (
+SELECT DISTINCT *
+FROM bronze.raw_inv
+)
+SELECT COUNT(*)
+FROM cte3;
+
+-- There are 875,246 combinations of BibNum and Item_Type
+-- 8,837,374 combinations, but we just want the latest date so it should be reduced later --> Still expect 875,246 rows
+WITH cte4 AS (
+SELECT bibnum, item_type, MAX(report_date) AS last_date
+FROM bronze.raw_inv
+GROUP BY bibnum, item_type
+)
+SELECT COUNT(*)
+FROM cte4;
