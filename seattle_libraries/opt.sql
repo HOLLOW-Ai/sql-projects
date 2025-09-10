@@ -115,3 +115,13 @@ SELECT
 FROM scan_table
 WHERE rn = 1
 ;
+
+-- Testing with different combination of indexes
+
+DROP INDEX idx_bibnum ON bronze.raw_inv;
+
+CREATE NONCLUSTERED INDEX idx_bibnum ON bronze.raw_inv (bibnum);
+
+--CREATE NONCLUSTERED INDEX idx_bibnum ON bronze.raw_inv (bibnum, item_type);
+
+--CREATE NONCLUSTERED INDEX idx_bibnum ON bronze.raw_inv (bibnum, report_date DESC);
