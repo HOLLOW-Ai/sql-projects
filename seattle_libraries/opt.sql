@@ -125,3 +125,84 @@ CREATE NONCLUSTERED INDEX idx_bibnum ON bronze.raw_inv (bibnum);
 --CREATE NONCLUSTERED INDEX idx_bibnum ON bronze.raw_inv (bibnum, item_type);
 
 --CREATE NONCLUSTERED INDEX idx_bibnum ON bronze.raw_inv (bibnum, report_date DESC);
+
+
+WITH scan_table AS (
+	SELECT
+		  bibnum
+		, title
+		, author
+		, isbn
+		, pub_year
+		, publisher
+		, item_type
+		, report_date
+		, MAX(title) OVER (PARTITION BY bibnum, item_type) AS max_title
+		, MAX(author) OVER (PARTITION BY bibnum, item_type) AS max_author
+		, MAX(isbn) OVER (PARTITION BY bibnum, item_type) AS max_isbn
+		, MAX(pub_year) OVER (PARTITION BY bibnum, item_type) AS max_year
+		, MAX(publisher) OVER (PARTITION BY bibnum, item_type) AS max_publisher
+		, ROW_NUMBER() OVER (PARTITION BY bibnum, item_type ORDER BY report_date DESC) AS rn
+	FROM bronze.raw_inv
+), final_table AS (
+	SELECT
+		  bibnum
+		, COALESCE(title, max_title) AS title
+		, COALESCE(author, max_author) AS author
+		, COALESCE(isbn, max_isbn) AS isbn
+		, COALESCE(pub_year, max_year) AS pub_year
+		, COALESCE(publisher, max_publisher) AS publisher
+		, item_type
+		, report_date
+	FROM scan_table
+	WHERE rn = 1
+)
+INSERT INTO silver.inventory (
+	  bibnum
+	, title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, item_type
+	, report_date
+)
+SELECT 
+	  bibnum
+	, title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, item_type
+	, report_date
+FROM final_table;
+
+
+SELECT bibnum
+FROM silver.inventory
+GROUP BY bibnum
+HAVING COUNT(*) > 1;
+
+SELECT COUNT(DISTINCT bibnum)
+FROM silver.inventory;
+
+SELECT *
+FROM silver.inventory
+WHERE bibnum = 616853;
+
+SELECT MAX(LEN(bibnum)), MAX(LEN(title)), MAX(LEN(author)), MAX(LEN(isbn)), MAX(LEN(pub_year)), MAX(LEN(publisher))
+FROM bronze.raw_inv;
+
+DROP TABLE bronze.raw_inv;
+
+CREATE TABLE silver.inventory (
+	  bibnum INT
+	, title NVARCHAR(2000)
+	, author NVARCHAR(500)
+	, isbn NVARCHAR(2000)
+	, pub_year NVARCHAR(250)
+	, publisher NVARCHAR(500)
+	, item_type NVARCHAR(20)
+	, report_date DATE
+);
