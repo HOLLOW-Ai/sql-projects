@@ -8,13 +8,14 @@
 	====================================================
 */
 IF OBJECT_ID ('gold.dim_item_collection') IS NOT NULL
-	DROP VIEW gold.dim_item_collection
+	DROP VIEW gold.dim_item_collection;
 GO
 
 -- I probably should've done this when I was transferring this from Bronze to Silver
-CREATE VIEW gold.dim_item_type AS
+CREATE VIEW gold.dim_item_collection AS
 SELECT
-	  code
+	ROW_NUMBER() OVER (ORDER BY code) AS col_key
+	, code
 	, description
 	, COALESCE(format_group, 'Other') AS format_group
 	, COALESCE(format_subgroup, 'Other') AS format_subgroup
@@ -46,11 +47,15 @@ GO
 	
 */
 
+IF OBJECT_ID ('gold.dim_item_type') IS NOT NULL
+	DROP VIEW gold.dim_item_type;
+GO
+
+CREATE VIEW gold.dim_item_type AS
 SELECT
 	  ROW_NUMBER() OVER (ORDER BY code) AS type_key
 	,  code
 	, description
-	--, code_type
 	, COALESCE(format_group, 'Other') AS format_group	-- 1 NULL value, will impute with 'Other' since it exists
 	, COALESCE(format_subgroup, 'Other') AS format_subgroup
 	, COALESCE(cat_group, 'Miscellaneous') AS cat_group
@@ -58,6 +63,7 @@ SELECT
 	, COALESCE(age_group, 'N/A') AS age_group -- 1 NULL value, going with N/A
 FROM silver.dictionary
 WHERE TRIM(code_type) = 'ItemType';
+GO
 
 
 
@@ -69,27 +75,50 @@ WHERE TRIM(code_type) = 'ItemType';
 	Notes:
 	- 'item_type' column is removed because it will be reconnected back in the Fact table
 	- For the rows that still have NULL in the 'isbn' column, then it will be imputed with 'N/A'
+	- There are some records in Checkout where it has a title, but the associated BibNum in the Inventory table has a record that exists but no title
 */
 
-SELECT TOP 1000
+SELECT TOP 500
 	  ROW_NUMBER() OVER (ORDER BY bibnum ASC, item_type ASC) AS inv_key
 	, bibnum
 	, title
-	, author
+	, COALESCE(author, 'N/A') AS author
 	, COALESCE(isbn, 'N/A') AS isbn
-	, pub_year
-	, publisher
+	, COALESCE(pub_year, 'N/A') AS pub_year
+	, COALESCE(publisher, 'N/A')
 	, report_date AS latest_report_date
-FROM silver.inventory;
+FROM silver.inventory
+WHERE title IS NULL
+;
 
+SELECT *
+FROM silver.checkout_records
+WHERE bibnum = 439801;
 
+SELECT
+FROM silver.inventory
+WHERE author IS NULL
+AND title IS NULL
+AND isbn IS NULL
+;
+
+SELECT *
+FROM silver.checkout_records R
+WHERE EXISTS
+	(SELECT 1 FROM silver.inventory I WHERE R.bibnum = I.bibnum AND I.author IS NULL AND I.title IS NULL AND isbn IS NULL)
+;
+
+SELECT *
+FROM silver.inventory
+WHERE bibnum = 439801;
 
 /*
 	====================================================
 	Create Fact View: gold.fact_checkouts
 	====================================================
 
-	
+	Notes:
+	- This view should be created last after creating the dimension tables
 */
 
 SELECT TOP 1000
@@ -105,16 +134,40 @@ FROM silver.checkout_records;
 -- Interesting that 19,966 items have BibNums that have been checked out but are not reported in the library inventory
 -- Even after checking the full inventory dataset uploaded on the City's site, these items do not have a BibNum in the data
 -- To follow that Dimension-Fact model, these rows will not be included in the Views because ideally the FKs in a Fact table should be referencing something
-WITH data_check AS (
-	SELECT *
-	FROM silver.checkout_records R
-	WHERE NOT EXISTS
-		(SELECT 1 FROM silver.inventory I WHERE I.bibnum = R.bibnum)
+
+-- After filtering, should expect there to be 76,970 less rows in the checkout table (Should be an expected 16,537,540 rows)
+-- This works correctly, use this to create the view
+WITH counts AS (
+SELECT *
+FROM silver.checkout_records R
+WHERE EXISTS
+	(SELECT 1 FROM silver.inventory I WHERE I.bibnum = R.bibnum)
 )
-SELECT bibnum
-FROM data_check
-GROUP BY bibnum;
+SELECT COUNT(*)
+FROM counts;
+
+-- Every checkout ID is distinct
+SELECT COUNT(DISTINCT id)
+FROM silver.checkout_records;
+
+-- Checking for duplicate Checkout IDs
+WITH cte AS (
+SELECT id
+FROM silver.checkout_records
+GROUP BY id
+HAVING COUNT(*) > 1
+)
+SELECT *
+FROM silver.checkout_records R
+WHERE EXISTS (
+				SELECT 1 FROM cte WHERE cte.id = R.id
+			);
 
 SELECT *
 FROM silver.inventory
 WHERE bibnum = 3999220;
+
+SELECT 16614510 - 76970;
+
+SELECT *
+FROM INFORMATION_SCHEMA.VIEWS;
