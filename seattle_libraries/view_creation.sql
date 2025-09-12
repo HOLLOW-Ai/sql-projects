@@ -4,6 +4,8 @@
 	====================================================
 
 	Join the code from the dictionary, filtered to 'ItemCollection', and then join in to the Checkout Records and then replace it with the Key column
+	Notes:
+	- Should double-check if I want to impute a value for a NULL in a text column, or just leave it as NULL instead
 
 	====================================================
 */
@@ -44,7 +46,8 @@ GO
 	Create Dimension View: gold.dim_item_type
 	====================================================
 
-	
+	Notes:
+	- Should double-check if I want to impute a value for a NULL in a text column, or just leave it as NULL instead
 */
 
 IF OBJECT_ID ('gold.dim_item_type') IS NOT NULL
@@ -78,39 +81,62 @@ GO
 	- There are some records in Checkout where it has a title, but the associated BibNum in the Inventory table has a record that exists but no title
 */
 
-SELECT TOP 500
-	  ROW_NUMBER() OVER (ORDER BY bibnum ASC, item_type ASC) AS inv_key
-	, bibnum
-	, title
-	, COALESCE(author, 'N/A') AS author
-	, COALESCE(isbn, 'N/A') AS isbn
-	, COALESCE(pub_year, 'N/A') AS pub_year
-	, COALESCE(publisher, 'N/A')
-	, report_date AS latest_report_date
-FROM silver.inventory
-WHERE title IS NULL
-;
+IF OBJECT_ID ('gold.dim_inventory') IS NOT NULL
+	DROP VIEW gold.dim_inventory;
+GO
 
+CREATE VIEW gold.dim_inventory AS
+WITH impute_titles AS (
+	SELECT
+		  bibnum
+		, item_type
+		, item_title
+	FROM silver.checkout_records R
+	WHERE EXISTS
+		(SELECT 1 FROM silver.inventory I WHERE R.bibnum = I.bibnum AND I.title IS NULL AND R.item_title IS NOT NULL)
+)
+SELECT
+	  ROW_NUMBER() OVER (ORDER BY I.bibnum ASC, I.item_type ASC) AS inv_key
+	, I.bibnum
+	, COALESCE(I.title, T.item_title) AS title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, report_date AS latest_report_date
+FROM silver.inventory AS I
+LEFT JOIN impute_titles AS T
+	ON I.bibnum = T.bibnum
+	AND I.item_type = T.item_type
+;
+GO
+
+-- Testing queries
 SELECT *
 FROM silver.checkout_records
 WHERE bibnum = 439801;
 
-SELECT
+SELECT *
 FROM silver.inventory
 WHERE author IS NULL
 AND title IS NULL
 AND isbn IS NULL
 ;
 
-SELECT *
+SELECT
+	  bibnum
+	, item_type
+	, item_title
 FROM silver.checkout_records R
 WHERE EXISTS
-	(SELECT 1 FROM silver.inventory I WHERE R.bibnum = I.bibnum AND I.author IS NULL AND I.title IS NULL AND isbn IS NULL)
+	(SELECT 1 FROM silver.inventory I WHERE R.bibnum = I.bibnum AND I.title IS NULL AND R.item_title IS NOT NULL)
 ;
 
 SELECT *
-FROM silver.inventory
-WHERE bibnum = 439801;
+FROM silver.inventory I
+WHERE EXISTS 
+	(SELECT 1 FROM silver.checkout_records R WHERE R.bibnum = I.bibnum AND I.author IS NULL AND I.title IS NULL AND isbn IS NULL)
+
 
 /*
 	====================================================
