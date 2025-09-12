@@ -79,6 +79,8 @@ GO
 	- 'item_type' column is removed because it will be reconnected back in the Fact table
 	- For the rows that still have NULL in the 'isbn' column, then it will be imputed with 'N/A'
 	- There are some records in Checkout where it has a title, but the associated BibNum in the Inventory table has a record that exists but no title
+
+	-- Looking back, should've just removed the item_type column from the previous table and only keep the distinct bibnum instead of a combo bibnum-item_type
 */
 
 IF OBJECT_ID ('gold.dim_inventory') IS NOT NULL
@@ -89,27 +91,39 @@ CREATE VIEW gold.dim_inventory AS
 WITH impute_titles AS (
 	SELECT
 		  bibnum
-		, item_type
+		--, item_type
 		, item_title
 	FROM silver.checkout_records R
 	WHERE EXISTS
 		(SELECT 1 FROM silver.inventory I WHERE R.bibnum = I.bibnum AND I.title IS NULL AND R.item_title IS NOT NULL)
+), filtered_inv AS (
+SELECT
+	  bibnum
+	, MAX(title) AS title
+	, MAX(author) AS author
+	, MAX(isbn) AS isbn
+	, MAX(pub_year) AS pub_year
+	, MAX(publisher) AS publisher
+	, MAX(report_date) AS latest_report_date
+FROM silver.inventory
+GROUP BY bibnum
 )
 SELECT
-	  ROW_NUMBER() OVER (ORDER BY I.bibnum ASC, I.item_type ASC) AS inv_key
-	, I.bibnum
+	  I.bibnum
 	, COALESCE(I.title, T.item_title) AS title
 	, author
 	, isbn
 	, pub_year
 	, publisher
-	, report_date AS latest_report_date
-FROM silver.inventory AS I
+	, latest_report_date
+FROM filtered_inv AS I
 LEFT JOIN impute_titles AS T
 	ON I.bibnum = T.bibnum
-	AND I.item_type = T.item_type
+	--AND I.item_type = T.item_type
 ;
 GO
+
+
 
 -- Testing queries
 SELECT *
@@ -145,29 +159,64 @@ WHERE EXISTS
 
 	Notes:
 	- This view should be created last after creating the dimension tables
+	- Should replace 'BibNum' and 'Item_Type' with the 'Inventory_Key' from gold.dim_inventory
+	- 'Item_Collection' and 'Item_Title' should not be included in the final dataset
+	- TBD if I want to remove the 'Checkout_Year' column
+	- Filter out the checkout records that don't have an associated 'BibNum' record in the Inventory table
+	- Every 'checkout_id' is distinct
 */
 
-SELECT TOP 1000
-	  id AS checkout_id	-- ID cannot be cast as BIGINT because the values are too big they overflow
-	, checkout_year
-	, bibnum
-	, item_type
-	, collection AS item_collection
-	, item_title
-	, checkout_datetime
-FROM silver.checkout_records;
+IF OBJECT_ID ('gold.fact_checkouts') IS NOT NULL
+	DROP VIEW gold.fact_checkouts;
+GO
 
--- Interesting that 19,966 items have BibNums that have been checked out but are not reported in the library inventory
--- Even after checking the full inventory dataset uploaded on the City's site, these items do not have a BibNum in the data
--- To follow that Dimension-Fact model, these rows will not be included in the Views because ideally the FKs in a Fact table should be referencing something
+-- Step 1: Filter our the rows that don't have a corresponding record in Inventory
+	-- Takes about 2:09 to return the 16m+ filtered rows
+	-- Going to takeout checkout_year for now, as well as title because it isn't needed
+-- Step 2: LEFT JOIN gold.dim_inventory replace 'bibnum' and 'item
+
+
+CREATE VIEW gold.fact_checkouts AS
+WITH filtered_tbl AS (
+	SELECT
+		  id AS checkout_id
+		--, checkout_year
+		, bibnum
+		, item_type
+		, collection AS item_collection
+		--, item_title
+		, checkout_datetime
+	FROM silver.checkout_records R
+	WHERE EXISTS
+		(SELECT 1 FROM silver.inventory I WHERE I.bibnum = R.bibnum)
+)
+SELECT TOP 1000
+		  checkout_id
+		--, checkout_year
+		, C.bibnum
+		, type_key
+		, col_key
+		--, item_title
+		, checkout_datetime
+FROM filtered_tbl AS C
+LEFT JOIN gold.dim_inventory AS I
+	ON C.bibnum = I.bibnum
+LEFT JOIN gold.dim_item_type AS T
+	ON C.item_type = T.code
+LEFT JOIN gold.dim_item_collection CO
+	ON C.item_collection = CO.code
+;
+GO
+
+-- Testing Queries
 
 -- After filtering, should expect there to be 76,970 less rows in the checkout table (Should be an expected 16,537,540 rows)
 -- This works correctly, use this to create the view
 WITH counts AS (
-SELECT *
-FROM silver.checkout_records R
-WHERE EXISTS
-	(SELECT 1 FROM silver.inventory I WHERE I.bibnum = R.bibnum)
+	SELECT *
+	FROM silver.checkout_records R
+	WHERE EXISTS
+		(SELECT 1 FROM silver.inventory I WHERE I.bibnum = R.bibnum)
 )
 SELECT COUNT(*)
 FROM counts;
@@ -178,10 +227,10 @@ FROM silver.checkout_records;
 
 -- Checking for duplicate Checkout IDs
 WITH cte AS (
-SELECT id
-FROM silver.checkout_records
-GROUP BY id
-HAVING COUNT(*) > 1
+	SELECT id
+	FROM silver.checkout_records
+	GROUP BY id
+	HAVING COUNT(*) > 1
 )
 SELECT *
 FROM silver.checkout_records R
@@ -190,10 +239,23 @@ WHERE EXISTS (
 			);
 
 SELECT *
-FROM silver.inventory
-WHERE bibnum = 3999220;
-
-SELECT 16614510 - 76970;
-
-SELECT *
 FROM INFORMATION_SCHEMA.VIEWS;
+
+SELECT COUNT(*)
+FROM gold.dim_inventory;
+
+-- Just move forward with this
+SELECT
+	  bibnum
+	, MAX(title) AS title
+	, MAX(author) AS author
+	, MAX(isbn) AS isbn
+	, MAX(pub_year) AS pub_year
+	, MAX(publisher) AS publisher
+	, MAX(report_date) AS latest_report_date
+FROM silver.inventory
+GROUP BY bibnum;
+
+
+SELECT TOP 100 *
+FROM gold.fact_checkouts;
