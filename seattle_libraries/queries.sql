@@ -11,6 +11,11 @@
 -- COUNT(*): CPU = 16 + 3625 ms, elapsed = 16 + 3758 ms
 -- COUNT(DISTINCT checkout_id): CPU time = 15188 ms,  elapsed time = 15695 ms. (Does 2 Hash matches)
 -- COUNT(checkout_id): CPU time = 3829 ms,  elapsed time = 4171 ms.
+
+-- Finding out that I can't delete the query (session) that I made the temp tables in or it will delete the temp tables too lmao
+--EXEC gold.temp_checkout_heap;
+--EXEC gold.temp_inv_heap;
+
 SET STATISTICS TIME ON;
 SELECT
 	  YEAR(checkout_datetime) AS checkout_year
@@ -73,3 +78,52 @@ SET STATISTICS TIME OFF;
 SET STATISTICS TIME ON;
 CREATE NONCLUSTERED INDEX idx_bibnum ON ##checkouts (bibnum);
 SET STATISTICS TIME OFF;
+
+
+
+-- ======================================================
+-- Query 3: Most Checked Out Item Overall
+-- ======================================================
+
+SET STATISTICS TIME ON;
+CREATE CLUSTERED INDEX idx_bibnum_inv ON ##inventory (bibnum);
+SET STATISTICS TIME OFF;
+
+DROP INDEX idx_bibnum_inv ON ##inventory;
+
+
+-- Takes 5 seconds to run w/ no index
+-- 2 Seconds with Index using Nonclustered; still does a Table Scan of Inventory
+-- Created new CLustered index on inventory (bibnum) so it avoids the Table Scan
+WITH cte1 AS (
+	SELECT
+		  bibnum
+		, COUNT(*) AS num_checkouts
+		, DENSE_RANK() OVER (ORDER BY COUNT(*) DESC) AS rnk
+	FROM ##checkouts
+	GROUP BY bibnum
+)
+SELECT
+	  C.bibnum
+	, C.num_checkouts
+	, I.title
+	, I.author
+	, I.pub_year
+	, I.publisher
+FROM cte1 C
+INNER JOIN ##inventory I -- Inventory doesn't really need a temp table, but this is just for storage purposes
+	ON C.bibnum = I.bibnum
+WHERE rnk = 1;
+
+
+
+-- ======================================================
+-- Query 4: Top 10 Most Popular Item Types
+-- ======================================================
+
+
+
+
+-- ======================================================
+-- Query 5: Most Checked Out Item for Each Type
+-- ======================================================
