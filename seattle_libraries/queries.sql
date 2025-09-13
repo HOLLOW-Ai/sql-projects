@@ -121,9 +121,41 @@ WHERE rnk = 1;
 -- Query 4: Top 10 Most Popular Item Types
 -- ======================================================
 
-
+WITH cte2 AS (
+	SELECT
+		  type_key
+		, COUNT(*) AS num_checkouts
+		, DENSE_RANK() OVER (ORDER BY COUNT(*) DESC) AS rnk
+	FROM ##checkouts
+	GROUP BY type_key
+)
+SELECT
+	  I.code
+	, I.description
+	, C.num_checkouts
+FROM cte2 C
+INNER JOIN gold.dim_item_type I
+	ON C.type_key = I.type_key
+WHERE rnk <= 10;
 
 
 -- ======================================================
 -- Query 5: Most Checked Out Item for Each Type
 -- ======================================================
+
+-- ======================================================
+-- Query 6: Checkouts Broken Down by Month (+ Year?)
+-- ======================================================
+
+
+-- ======================================================
+-- Query 7: Checkouts Broken Down by Hour
+-- ======================================================
+
+
+-- ======================================================
+-- Query 8: Most Popular Collection
+-- ======================================================
+
+SELECT *
+FROM INFORMATION_SCHEMA.COLUMNS;
