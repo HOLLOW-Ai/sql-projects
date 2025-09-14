@@ -132,6 +132,9 @@ INNER JOIN ##inventory I -- Inventory doesn't really need a temp table, but this
 WHERE rnk = 1;
 
 
+-- ======================================================
+-- Query #: Top Checked out _Books_ Each Month
+-- ======================================================
 
 -- ======================================================
 -- Query 4: Top 10 Most Popular Item Types
