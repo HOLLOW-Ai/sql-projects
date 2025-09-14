@@ -157,5 +157,11 @@ WHERE rnk <= 10;
 -- Query 8: Most Popular Collection
 -- ======================================================
 
+
+
+-- ======================================================
+-- Query 9: Collection Overlap
+-- ======================================================
+
 SELECT *
 FROM INFORMATION_SCHEMA.COLUMNS;
