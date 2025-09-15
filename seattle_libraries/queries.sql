@@ -3,6 +3,13 @@
 -- ======================================================
 -- Union ALL Report of Null Values in Each Table
 
+-- Structure: inventory_null_checks (column_name, num_null_values, total_rows, perc_null)
+-- Few ways to find Nulls, use SET STATISTICS and Execution Plan to check performance
+-- Need to figure out how to pivot the column names into rows
+SELECT
+	  COUNT(*) - COUNT(column_name) AS nulls_for_column
+FROM ##inventory
+
 -- ======================================================
 -- Query 1: Checkouts per year + % Change Over Time
 -- ======================================================
