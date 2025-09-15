@@ -48,3 +48,33 @@ UNPIVOT
 	(num_nulls FOR column_name IN (bibnum_nulls, title_nulls, author_nulls, isbn_nulls, year_nulls, publisher_nulls, date_nulls)
 ) AS U;
 --SET STATISTICS TIME OFF;
+
+
+-- They should ideally all be 0
+WITH checkout_nulls AS (
+	SELECT
+		  COUNT(*) - COUNT(checkout_id) AS id_nulls
+		, COUNT(*) - COUNT(bibnum) AS bibnum_nulls
+		, COUNT(*) - COUNT(type_Key) AS type_nulls
+		, COUNT(*) - COUNT(col_key) AS col_nulls
+		, COUNT(*) - COUNT(checkout_datetime) AS datetime_nulls
+		, COUNT(*) AS num_rows
+	FROM ##checkouts
+)
+SELECT column_name, num_nulls, num_rows, CAST(ROUND((100.0 * num_nulls / num_rows), 2) AS DECIMAL(5, 2)) AS perc_null
+FROM (
+		SELECT
+			  id_nulls
+			, bibnum_nulls
+			, type_nulls
+			, col_nulls
+			, datetime_nulls
+			, num_rows
+		FROM checkout_nulls
+	) P
+UNPIVOT
+	(num_nulls FOR column_name IN (id_nulls, bibnum_nulls, type_nulls, col_nulls, datetime_nulls)
+) AS U;
+
+SELECT TOP 10 *
+FROM ##checkouts;
