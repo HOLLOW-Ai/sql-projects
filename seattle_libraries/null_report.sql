@@ -13,6 +13,8 @@ USE library;
 -- Few ways to find Nulls, use SET STATISTICS and Execution Plan to check performance
 -- Need to figure out how to pivot the column names into rows
 
+-- Wonder if this can be made into a function(?) so you input the column names and it will generate a null report
+
 SELECT TOP 100
 	  *
 FROM ##inventory;
@@ -78,3 +80,103 @@ UNPIVOT
 
 SELECT TOP 10 *
 FROM ##checkouts;
+
+WITH checkout_nulls AS (
+	SELECT
+		  COUNT(*) - COUNT(checkout_id) AS id_nulls
+		, COUNT(*) - COUNT(bibnum) AS bibnum_nulls
+		, COUNT(*) - COUNT(type_Key) AS type_nulls
+		, COUNT(*) - COUNT(col_key) AS col_nulls
+		, COUNT(*) - COUNT(checkout_datetime) AS datetime_nulls
+		, COUNT(*) AS num_rows
+	FROM ##checkouts
+)
+SELECT column_name, num_nulls, num_rows, CAST(ROUND((100.0 * num_nulls / num_rows), 2) AS DECIMAL(5, 2)) AS perc_null
+FROM (
+		SELECT
+			  id_nulls
+			, bibnum_nulls
+			, type_nulls
+			, col_nulls
+			, datetime_nulls
+			, num_rows
+		FROM checkout_nulls
+	) P
+UNPIVOT
+	(num_nulls FOR column_name IN (id_nulls, bibnum_nulls, type_nulls, col_nulls, datetime_nulls)
+) AS U;
+
+SELECT TOP 10 *
+FROM ##checkouts;
+
+
+-- Null report isn't absolutely necessary because there's at most 500 records
+-- I also did use COALESCE() with this View
+WITH collection_nulls AS (
+	SELECT
+		  COUNT(*) - COUNT(col_key) AS key_nulls
+		, COUNT(*) - COUNT(code) AS code_nulls
+		, COUNT(*) - COUNT(description) AS desc_nulls
+		, COUNT(*) - COUNT(format_group) AS fg_nulls
+		, COUNT(*) - COUNT(format_subgroup) AS fs_nulls
+		, COUNT(*) - COUNT(cat_group) AS cg_nulls
+		, COUNT(*) - COUNT(cat_subgroup) AS cs_nulls
+		, COUNT(*) - COUNT(age_group) AS age_nulls
+		, COUNT(*) AS num_rows
+	FROM gold.dim_item_collection
+)
+SELECT column_name, num_nulls, num_rows, CAST(ROUND((100.0 * num_nulls / num_rows), 2) AS DECIMAL(5, 2)) AS perc_null
+FROM (
+		SELECT
+			  key_nulls
+			, code_nulls
+			, desc_nulls
+			, fg_nulls
+			, fs_nulls
+			, cg_nulls
+			, cs_nulls
+			, age_nulls
+			, num_rows
+		FROM collection_nulls
+	) P
+UNPIVOT
+	(num_nulls FOR column_name IN (key_nulls, code_nulls, desc_nulls, fg_nulls, fs_nulls, cg_nulls, cs_nulls, age_nulls)
+) AS U;
+
+SELECT *
+FROM gold.dim_item_type;
+
+SELECT *
+FROM INFORMATION_SCHEMA.VIEWS;
+
+
+WITH type_nulls AS (
+	SELECT
+		  COUNT(*) - COUNT(type_key) AS key_nulls
+		, COUNT(*) - COUNT(code) AS code_nulls
+		, COUNT(*) - COUNT(description) AS desc_nulls
+		, COUNT(*) - COUNT(format_group) AS fg_nulls
+		, COUNT(*) - COUNT(format_subgroup) AS fs_nulls
+		, COUNT(*) - COUNT(cat_group) AS cg_nulls
+		, COUNT(*) - COUNT(cat_subgroup) AS cs_nulls
+		, COUNT(*) - COUNT(age_group) AS age_nulls
+		, COUNT(*) AS num_rows
+	FROM gold.dim_item_type
+)
+SELECT column_name, num_nulls, num_rows, CAST(ROUND((100.0 * num_nulls / num_rows), 2) AS DECIMAL(5, 2)) AS perc_null
+FROM (
+		SELECT
+			  key_nulls
+			, code_nulls
+			, desc_nulls
+			, fg_nulls
+			, fs_nulls
+			, cg_nulls
+			, cs_nulls
+			, age_nulls
+			, num_rows
+		FROM type_nulls
+	) P
+UNPIVOT
+	(num_nulls FOR column_name IN (key_nulls, code_nulls, desc_nulls, fg_nulls, fs_nulls, cg_nulls, cs_nulls, age_nulls)
+) AS U;
