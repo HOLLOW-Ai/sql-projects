@@ -87,6 +87,38 @@ FROM monthly_avg
 
 
 -- PU time = 4984 ms,  elapsed time = 5307 ms.
+
+--CPU time = 10172 ms,  elapsed time = 11056 ms.
+--SET STATISTICS TIME ON;
+
+---- This count how many checkouts occurred in total on each weekday from every year
+--WITH checkout_count aS (
+--	SELECT
+--		  DATENAME(dw, checkout_datetime) AS day_of_week
+--		, COUNT(*) AS num_count -- You could swap out for checkout_id since each row has a unique one, but * is better performance-wise
+--	FROM ##checkouts
+--	GROUP BY DATENAME(dw, checkout_datetime)
+--),
+---- This CTE should be counting how many times the day has occurred (Distinctly) in the dataset
+--weekday_count AS (
+--	SELECT
+--		  DATENAME(dw, checkout_datetime) AS day_of_week
+--		, COUNT(DISTINCT CAST(checkout_datetime AS DATE)) AS appearance
+--	FROM ##checkouts
+--	GROUP BY DATENAME(dw, checkout_datetime)
+--)
+--SELECT
+--	  C.day_of_week
+--	, ROUND(1.0 * num_count / appearance, 2) AS avg_checkout_count
+--FROM checkout_count C
+--INNER JOIN weekday_count W
+--	ON C.day_of_week = W.day_of_week
+--;
+--SET STATISTICS TIME OFF;
+
+
+
+
 SET STATISTICS TIME ON;
 
 -- This count how many checkouts occurred in total on each weekday from every year
@@ -94,23 +126,26 @@ WITH checkout_count aS (
 	SELECT
 		  DATENAME(dw, checkout_datetime) AS day_of_week
 		, COUNT(*) AS num_count -- You could swap out for checkout_id since each row has a unique one, but * is better performance-wise
-	FROM ##checkouts
-	GROUP BY DATENAME(dw, checkout_datetime)
-),
--- This CTE should be counting how many times the day has occurred (Distinctly) in the dataset
-weekday_count AS (
-	SELECT
-		  DATENAME(dw, checkout_datetime) AS day_of_week
 		, COUNT(DISTINCT CAST(checkout_datetime AS DATE)) AS appearance
 	FROM ##checkouts
 	GROUP BY DATENAME(dw, checkout_datetime)
 )
-SELECT *
-FROM weekday_count
+SELECT
+	  day_of_week
+	, ROUND(1.0 * num_count / appearance, 2) AS avg_checkout_count
+FROM checkout_count
+ORDER BY (CASE day_of_week
+			WHEN 'Monday' THEN 1
+			WHEN 'Tuesday' THEN 2
+			WHEN 'Wednesday' THEN 3
+			WHEN 'Thursday' THEN 4
+			WHEN 'Friday' THEN 5
+			WHEN 'Saturday' THEN 6
+			WHEN 'Sunday' THEN 7
+		END) ASC
 ;
 SET STATISTICS TIME OFF;
 
--- These 2 queries seem equal performance wise, use the first one to keep it simple
 
 -- ======================================================
 -- Query 7: Checkouts Broken Down by Hour
