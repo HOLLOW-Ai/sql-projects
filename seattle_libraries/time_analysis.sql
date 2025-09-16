@@ -151,10 +151,6 @@ SET STATISTICS TIME OFF;
 -- Query 7: Checkouts Broken Down by Hour
 -- ======================================================
 
--- Keep in mind this is a 24 hour time
-SELECT TOP 10 *, DATEPART(HOUR, checkout_datetime) AS hr
-FROM ##checkouts;
-
 --CPU time = 4390 ms,  elapsed time = 4727 ms.
 SET STATISTICS TIME ON;
 WITH hour_count aS (
@@ -173,11 +169,27 @@ ORDER BY hour_num ASC
 ;
 SET STATISTICS TIME OFF;
 
-SELECT TOP 100 *, DATETRUNC(HOUR, checkout_datetime)
-FROM ##checkouts
-;
-
 
 -- ======================================================
 -- Top 5 Most Active Days
 -- ======================================================
+
+-- See what the difference is between using DATE_TRUNC() and CAST(), if there is at all
+-- Probably stick to CAST() because it is ANSI
+WITH checkout_count aS (
+	SELECT
+		  CAST(checkout_datetime AS DATE) AS checkout_date
+		, COUNT(*) AS num_count
+		--, ROUND(100.0 * COUNT(*) / (SELECT COUNT(*) FROM ##checkouts), 2) AS proportion
+		, DENSE_RANK() OVER (ORDER BY COUNT(*) DESC) AS rnk
+	FROM ##checkouts
+	GROUP BY CAST(checkout_datetime AS DATE)
+)
+SELECT
+	  checkout_date
+	, num_count
+	, proportion
+	, rnk
+FROM checkout_count
+WHERE rnk <= 5
+ORDER BY rnk;
