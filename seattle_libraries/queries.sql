@@ -1,16 +1,4 @@
 -- ======================================================
--- Query #: NULL Checks
--- ======================================================
--- Union ALL Report of Null Values in Each Table
-
--- Structure: inventory_null_checks (column_name, num_null_values, total_rows, perc_null)
--- Few ways to find Nulls, use SET STATISTICS and Execution Plan to check performance
--- Need to figure out how to pivot the column names into rows
-SELECT
-	  COUNT(*) - COUNT(column_name) AS nulls_for_column
-FROM ##inventory
-
--- ======================================================
 -- Query 1: Checkouts per year + % Change Over Time
 -- ======================================================
 
@@ -70,22 +58,6 @@ SET STATISTICS TIME OFF;
 
 DROP INDEX idx_checkout_id ON ##checkouts;
 
-
--- ======================================================
--- Query 6: Checkouts Broken Down by Month (Focus on Most Popular Year)
--- ======================================================
-
--- ======================================================
--- Query #: Checkouts Broken Down by Day
--- ======================================================
-
--- ======================================================
--- Query #: Checkouts Broken Down by Day of Week
--- ======================================================
-
--- ======================================================
--- Query 7: Checkouts Broken Down by Hour
--- ======================================================
 
 -- ======================================================
 -- Query 2: Top 10 Items Checked Out Overall
