@@ -132,7 +132,7 @@ WITH checkout_count aS (
 )
 SELECT
 	  day_of_week
-	, ROUND(1.0 * num_count / appearance, 2) AS avg_checkout_count
+	, ROUND(1.0 * num_count / appearance, 2) AS avg_checkout_count -- Add a CAST() later
 FROM checkout_count
 ORDER BY (CASE day_of_week
 			WHEN 'Monday' THEN 1
@@ -150,6 +150,32 @@ SET STATISTICS TIME OFF;
 -- ======================================================
 -- Query 7: Checkouts Broken Down by Hour
 -- ======================================================
+
+-- Keep in mind this is a 24 hour time
+SELECT TOP 10 *, DATEPART(HOUR, checkout_datetime) AS hr
+FROM ##checkouts;
+
+--CPU time = 4390 ms,  elapsed time = 4727 ms.
+SET STATISTICS TIME ON;
+WITH hour_count aS (
+	SELECT
+		  DATEPART(HOUR, checkout_datetime) AS hour_num
+		, COUNT(*) AS num_count
+		, COUNT(DISTINCT DATETRUNC(HOUR, checkout_datetime)) AS appearance -- Can get away with this because it's a 24-hour clock
+	FROM ##checkouts
+	GROUP BY DATEPART(HOUR, checkout_datetime)
+)
+SELECT
+	  hour_num
+	, ROUND(1.0 * num_count / appearance, 2) AS avg_checkout_count -- Add a CAST() later
+FROM hour_count
+ORDER BY hour_num ASC
+;
+SET STATISTICS TIME OFF;
+
+SELECT TOP 100 *, DATETRUNC(HOUR, checkout_datetime)
+FROM ##checkouts
+;
 
 
 -- ======================================================
