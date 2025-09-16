@@ -11,7 +11,7 @@
 
 	Optional: Create an index on ##checkouts and ##inventory:
 	CREATE CLUSTERED INDEX idx_checkout_id ON ##checkouts (checkout_id);
-	CREATE CLUSTERED INDEX idx_checkout_id ON ##inventory (bibnum);
+	CREATE CLUSTERED INDEX idx_bibnum ON ##inventory (bibnum);
 */
 
 --	==================================
@@ -45,6 +45,9 @@ ORDER BY year ASC
 -- ======================================================
 
 -- To find avg checkouts per month, you would need a CTE to group by year and month, and the following CTE to AVG that
+
+-- Actually, should I just divide it by 5-6 because it's dependent on the time range of the dataset; 2025 ends in September?
+-- Come back and redo this
 WITH months AS (
 	SELECT
 		  YEAR(checkout_datetime) AS ch_year
@@ -76,8 +79,38 @@ FROM monthly_avg
 -- ======================================================
 -- Query #: Checkouts Broken Down by Day of Week
 -- ======================================================
-SELECT TOP 50 *, DATENAME(dw, checkout_datetime)
-FROM ##checkouts;
+
+-- How many days of the week has it been
+-- How many data were Tuesday, for example, and then divide the sum total of checkouts by however many time it was Tuesday in total
+
+-- One part is finding out how many days in the time range were a specific weekday, and how many checkouts occurred in total on those weekdays
+
+
+-- PU time = 4984 ms,  elapsed time = 5307 ms.
+SET STATISTICS TIME ON;
+
+-- This count how many checkouts occurred in total on each weekday from every year
+WITH checkout_count aS (
+	SELECT
+		  DATENAME(dw, checkout_datetime) AS day_of_week
+		, COUNT(*) AS num_count -- You could swap out for checkout_id since each row has a unique one, but * is better performance-wise
+	FROM ##checkouts
+	GROUP BY DATENAME(dw, checkout_datetime)
+),
+-- This CTE should be counting how many times the day has occurred (Distinctly) in the dataset
+weekday_count AS (
+	SELECT
+		  DATENAME(dw, checkout_datetime) AS day_of_week
+		, COUNT(DISTINCT CAST(checkout_datetime AS DATE)) AS appearance
+	FROM ##checkouts
+	GROUP BY DATENAME(dw, checkout_datetime)
+)
+SELECT *
+FROM weekday_count
+;
+SET STATISTICS TIME OFF;
+
+-- These 2 queries seem equal performance wise, use the first one to keep it simple
 
 -- ======================================================
 -- Query 7: Checkouts Broken Down by Hour
