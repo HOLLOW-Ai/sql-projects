@@ -69,7 +69,49 @@ ORDER BY rnk ASC
 -- Most Checked Out Item for Each Type (Over Time, with % Change and Ranking Change)
 -- ======================================================
 
-
+-- Find out how many times an item has been checked out
+-- Joining on Bibnum and Type Key
+-- Join to the Item Type table
+-- Join to Inventory table to get title
+SELECT TOP 100 *
+FROM ##checkouts C
+LEFT JOIN gold.dim_item_type I
+	ON C.type_key = I.type_key
+;
+-- Execution Plan recommends to create a NCL index on type_key INCLUDE bibnum in ##checkouts
+/*
+USE [tempdb]
+GO
+CREATE NONCLUSTERED INDEX [idx_type_bib_ncl]
+ON [dbo].[##checkouts] ([type_key])
+INCLUDE ([bibnum])
+GO
+*/
+-- Takes it from ~1:50 to 3 seconds
+WITH cte1 AS (
+	SELECT
+		  bibnum
+		, type_key
+		, COUNT(*) AS num_checkouts
+	FROM ##checkouts
+	GROUP BY bibnum, type_key
+),
+cte2 AS (
+SELECT
+	  type_key
+	, COUNT(DISTINCT bibnum) AS num_items
+FROM cte1
+GROUP BY type_key
+)
+SELECT
+	  I.type_key
+	, I.code
+	, I.description
+	, COALESCE(cte2.num_items, 0) AS num_items
+FROM gold.dim_item_type I
+LEFT JOIN cte2
+	ON I.type_key = cte2.type_key
+;
 
 
 -- ======================================================
@@ -81,6 +123,9 @@ ORDER BY rnk ASC
 -- ======================================================
 -- Collection Overlap - How much do Bibnums overlap in other collections?
 -- ======================================================
+
+-- Checking if the existence of an item in a collection also exists in another collection
+-- Finding what collection is has the highest overlap with, and by how much
 
 SELECT *
 FROM INFORMATION_SCHEMA.COLUMNS;
