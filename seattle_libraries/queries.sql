@@ -50,6 +50,15 @@ ORDER BY rnk ASC
 
 -- If I keep the ties, then the type_key in the final query can show up multiple times if somehow the item with the most checkouts is tied
 
+-- Execution Plan recommends to create a NCL index on type_key INCLUDE bibnum in ##checkouts
+/*
+USE [tempdb]
+GO
+CREATE NONCLUSTERED INDEX [idx_type_bib_ncl]
+ON [dbo].[##checkouts] ([type_key])
+INCLUDE ([bibnum])
+GO
+*/
 WITH cte2 AS (
 	SELECT
 		  type_key
@@ -94,70 +103,6 @@ LEFT JOIN cte4 C4
 LEFT JOIN ##inventory I
 	ON C4.bibnum = I.bibnum
 ;
---SELECT
---	  I.code
---	, I.description
---	, C2.total_checkouts
---	, rnk
---FROM cte2 C2
---INNER JOIN gold.dim_item_type I
---	ON C2.type_key = I.type_key
---WHERE rnk <= 5
---;
-
-
--- ======================================================
--- Most Checked Out Item for Each Type (Over Time, with % Change and Ranking Change)
--- ======================================================
-
--- Find out how many times an item has been checked out
--- Joining on Bibnum and Type Key
--- Join to the Item Type table
--- Join to Inventory table to get title
-SELECT TOP 100 *
-FROM ##checkouts C
-LEFT JOIN gold.dim_item_type I
-	ON C.type_key = I.type_key
-;
--- Execution Plan recommends to create a NCL index on type_key INCLUDE bibnum in ##checkouts
-/*
-USE [tempdb]
-GO
-CREATE NONCLUSTERED INDEX [idx_type_bib_ncl]
-ON [dbo].[##checkouts] ([type_key])
-INCLUDE ([bibnum])
-GO
-*/
--- Takes it from ~1:50 to 3 seconds
--- Consider how much cte2 is necessary
-
--- How many of titles belong to each Item Type
--- How many times has each item been checked out (do not mix: bibnums can be classified as different types and should not be included in others)
-
-WITH cte1 AS (
-	SELECT
-		  bibnum
-		, type_key
-		, COUNT(*) AS num_checkouts
-	FROM ##checkouts
-	GROUP BY bibnum, type_key
-),
-cte2 AS (
-	SELECT
-		  type_key
-		, COUNT(DISTINCT bibnum) AS num_items
-	FROM cte1
-	GROUP BY type_key
-)
-SELECT
-	  I.type_key
-	, I.code
-	, I.description
-	, COALESCE(cte2.num_items, 0) AS num_items
-FROM gold.dim_item_type I
-LEFT JOIN cte2
-	ON I.type_key = cte2.type_key
-;
 
 
 -- ======================================================
@@ -184,17 +129,47 @@ ORDER BY rnk ASC
 ;
 
 -- ======================================================
--- Collection Overlap - How much do Bibnums overlap in other collections?
+-- Collection/Item Overlap - How much do Bibnums overlap in other collections?
 -- ======================================================
 
 -- Checking if the existence of an item in a collection also exists in another collection
 -- Finding what collection is has the highest overlap with, and by how much
 
+-- General Idea:
+	-- Thinking group by group by type/collection + bibnum, and then a CASE WHEN COUNT(*)/SUM() situation where for each row, it checks if there exists
+	-- the same bibnum and a != key and then either put 1 or 0; whatever rule I do
+	-- Can WHERE EXISTS work here?
+
+-- A quick way to check if a bibnum is assigned multiple types is to do a distinct of bibnum and type_key, and then have a cte based off that
+-- to do another group by bibnum and do HAVING COUNT(*) > 1
 SELECT *
 FROM INFORMATION_SCHEMA.COLUMNS;
 
+WITH cte1 AS (
+	SELECT
+		bibnum, type_key, LAG(type_key) OVER (PARTITION BY bibnum ORDER BY type_key) AS lag_type, LEAD(type_key) OVER (PARTITION BY bibnum ORDER BY type_key) AS lead_type
+	FROM ##checkouts
+	GROUP BY bibnum, type_key
+)
+SELECT TOP 1000
+	  bibnum
+	, type_key
+	, CASE
+		WHEN lag_type IS NOT NULL OR lead_type IS NOT NULL THEN 1
+		ELSE 0
+	  END AS marker
+FROM cte1
+--SELECT TOP 1000
+--	T1.bibnum, T1.type_key, T2.bibnum, T2.type_key
 
+--FROM cte1 T1
+--LEFT JOIN cte1 T2
+--	ON T1.bibnum = T2.bibnum AND T1.type_key < T2.type_key -- Decide if I want to use != or <, would need to UNION if doing the former, look at 3450154 as example
+--;
 
+SELECT *
+FROM ##checkouts
+WHERE bibnum IN (12873, 12880);
 -- ======================================================
 -- Most Author Appearances
 -- ======================================================
