@@ -88,6 +88,11 @@ INCLUDE ([bibnum])
 GO
 */
 -- Takes it from ~1:50 to 3 seconds
+-- Consider how much cte2 is necessary
+
+-- How many of titles belong to each Item Type
+-- How many times has each item been checked out (do not mix: bibnums can be classified as different types and should not be included in others)
+
 WITH cte1 AS (
 	SELECT
 		  bibnum
@@ -97,17 +102,18 @@ WITH cte1 AS (
 	GROUP BY bibnum, type_key
 ),
 cte2 AS (
-SELECT
-	  type_key
-	, COUNT(DISTINCT bibnum) AS num_items
-FROM cte1
-GROUP BY type_key
+	SELECT
+		  type_key
+		, COUNT(DISTINCT bibnum) AS num_items
+	FROM cte1
+	GROUP BY type_key
 )
 SELECT
 	  I.type_key
 	, I.code
 	, I.description
 	, COALESCE(cte2.num_items, 0) AS num_items
+	, 
 FROM gold.dim_item_type I
 LEFT JOIN cte2
 	ON I.type_key = cte2.type_key
@@ -115,10 +121,27 @@ LEFT JOIN cte2
 
 
 -- ======================================================
--- Most Popular Collections
+-- Most Checkouts by Collections
 -- ======================================================
 
-
+WITH cte1 AS (
+	SELECT
+		  col_key
+		, COUNT(*) AS num_checkouts
+		, DENSE_RANK() OVER (ORDER BY COUNT(*) DESC) AS rnk
+	FROM ##checkouts
+	GROUP BY col_key
+)
+SELECT
+	  I.code
+	, I.description
+	, COALESCE(cte1.num_checkouts, 0)
+	, COALESCE(cte1.rnk, 99999) AS rnk		-- This is so that NULL ranks are pushed to the bottom, alternatively I add a filter in a WHERE clause
+FROM gold.dim_item_collection I
+LEFT JOIN cte1
+	ON I.col_key = cte1.col_key
+ORDER BY rnk ASC
+;
 
 -- ======================================================
 -- Collection Overlap - How much do Bibnums overlap in other collections?
