@@ -136,10 +136,10 @@ ORDER BY rnk ASC;
 -- Items with the Oldest Report Date + Record where it was last checked out
 -- ======================================================
 
---CPU time = 344 ms,  elapsed time = 446 ms.
--- Returns 22,638 rows
-
--- For Titles that have the oldest reporting date, find the date of the most recent checkout date that is 1 month past to what would be the monthly update
+-- This is one particular example using the oldest report date of the item in the catalog
+-- This could be modifier to see the latest report date and checkout dates of items if it skips a month
+-- In the below query, we can see that 2,167 items have not been recently updated to be shown in the catalog of Seattle libraries, or were taken out and then
+-- put back in.
 SET STATISTICS TIME ON;
 WITH least_updated AS (
 SELECT
