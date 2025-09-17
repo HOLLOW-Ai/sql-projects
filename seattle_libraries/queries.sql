@@ -142,34 +142,95 @@ ORDER BY rnk ASC
 
 -- A quick way to check if a bibnum is assigned multiple types is to do a distinct of bibnum and type_key, and then have a cte based off that
 -- to do another group by bibnum and do HAVING COUNT(*) > 1
-SELECT *
-FROM INFORMATION_SCHEMA.COLUMNS;
 
 WITH cte1 AS (
 	SELECT
-		bibnum, type_key, LAG(type_key) OVER (PARTITION BY bibnum ORDER BY type_key) AS lag_type, LEAD(type_key) OVER (PARTITION BY bibnum ORDER BY type_key) AS lead_type
+		  bibnum
+		, type_key
+		, LAG(type_key) OVER (PARTITION BY bibnum ORDER BY type_key) AS lag_type
+		, LEAD(type_key) OVER (PARTITION BY bibnum ORDER BY type_key) AS lead_type
+	FROM ##checkouts
+	GROUP BY bibnum, type_key
+),
+cte2 AS (
+	SELECT
+		  bibnum
+		, type_key
+		, CASE
+			WHEN lag_type IS NOT NULL OR lead_type IS NOT NULL THEN 1
+			ELSE 0
+		  END AS marker
+	FROM cte1
+),
+cte3 AS (
+	SELECT
+		type_key
+		, COUNT(DISTINCT bibnum) AS unique_items
+		, SUM(marker) AS flag_total
+	FROM cte2
+	GROUP BY type_key
+), cte4 AS (
+-- Columns: Code, Code Description, # of Titles identified as the Code, % of Items that Overlap as Other Types/Collections
+-- At the 8 min mark of the query somehow
+SELECT
+	  T.code
+	, T.type_key
+	, T.description
+	--, C3.unique_items -- Add COALESCE()
+	, C3.flag_total -- This column slowing down the entire query somehow
+FROM gold.dim_item_type T
+INNER JOIN cte3 C3 -- If I choose to keep the flag_total, then changing LEFT JOIN to INNER JOIN will actually compute the query in 5 seconds
+	ON T.type_key = C3.type_key
+)
+SELECT *
+FROM cte4;
+
+
+
+
+-- Does a Bibnum appear more than once
+WITH combos AS (
+	-- Total of 474,789 rows
+	SELECT bibnum, type_key
 	FROM ##checkouts
 	GROUP BY bibnum, type_key
 )
-SELECT TOP 1000
-	  bibnum
-	, type_key
-	, CASE
-		WHEN lag_type IS NOT NULL OR lead_type IS NOT NULL THEN 1
-		ELSE 0
-	  END AS marker
-FROM cte1
---SELECT TOP 1000
---	T1.bibnum, T1.type_key, T2.bibnum, T2.type_key
+, flag_items AS(
+	SELECT
+		bibnum
+		, COUNT(*) AS appearance
+	FROM combos
+	GROUP BY bibnum
+)
+, flag_totals AS (
+SELECT
+	  type_key
+	, SUM(CASE WHEN appearance > 1 THEN 1 ELSE 0 END) AS flag
+FROM combos C
+INNER JOIN flag_items F
+	ON C.bibnum = F.bibnum
+GROUP BY type_key
+)
+-- CPU time = 213797 ms,  elapsed time = 214230 ms.; 3:34 to run
+SELECT
+	I.type_key
+	, COALESCE(flag, 0)
+FROM gold.dim_item_type I
+LEFT JOIN flag_totals F -- Spending all of the time in the Nested Loops (LEFT JOIN) step
+	ON I.type_key = F.type_key
 
---FROM cte1 T1
---LEFT JOIN cte1 T2
---	ON T1.bibnum = T2.bibnum AND T1.type_key < T2.type_key -- Decide if I want to use != or <, would need to UNION if doing the former, look at 3450154 as example
---;
+-- From the execution plan and Stack Overflow
 
-SELECT *
-FROM ##checkouts
-WHERE bibnum IN (12873, 12880);
+--SELECT
+--	  type_key
+--	, C.bibnum
+--	--, appearance
+--	, CASE WHEN appearance > 1 THEN 1 ELSE 0 END AS flag
+--FROM combos C
+--INNER JOIN flag_items F
+--	ON C.bibnum = F.bibnum
+
+
 -- ======================================================
 -- Most Author Appearances
 -- ======================================================
