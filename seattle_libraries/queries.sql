@@ -44,25 +44,66 @@ ORDER BY rnk ASC
 -- Most Popular Item Types + Most Popular Item
 -- ======================================================
 
+-- Find:
+	-- Number of Checkouts belonging to an Item Type
+	-- For each Item in that Type, the number of checkouts it has --> Eventually we just want the item with the highest checkouts
+
+-- If I keep the ties, then the type_key in the final query can show up multiple times if somehow the item with the most checkouts is tied
+
 WITH cte2 AS (
 	SELECT
 		  type_key
-		, COUNT(*) AS num_checkouts
+		, COUNT(*) AS total_checkouts
+		, COUNT(DISTINCT bibnum) AS num_titles
 		, DENSE_RANK() OVER (ORDER BY COUNT(*) DESC) AS rnk
 	FROM ##checkouts
 	GROUP BY type_key
+),
+cte3 AS (
+	SELECT
+		  bibnum
+		, type_key
+		, COUNT(*) AS item_checkouts
+		, DENSE_RANK() OVER (PARTITION BY type_key ORDER BY COUNT(*) DESC) AS rnk
+	FROM ##checkouts
+	GROUP BY bibnum, type_Key
+),
+cte4 AS (
+SELECT
+	  C2.type_key
+	, total_checkouts
+	, num_titles
+	, C3.bibnum
+	, item_checkouts
+FROM cte2 C2
+INNER JOIN cte3 C3
+	ON C2.type_key = C3.type_key
+	AND C3.rnk = 1
 )
 SELECT
-	  I.code
-	, I.description
-	, C.num_checkouts
-	, rnk
-FROM cte2 C
-INNER JOIN gold.dim_item_type I
-	ON C.type_key = I.type_key
-WHERE rnk <= 5
-ORDER BY rnk ASC
+	  T.code
+	, T.description
+	, C4.total_checkouts	-- Add COALESCE() later
+	, C4.num_titles
+	, C4.bibnum
+	, I.title
+	, C4.item_checkouts
+FROM gold.dim_item_type T
+LEFT JOIN cte4 C4
+	ON T.type_key = C4.type_key
+LEFT JOIN ##inventory I
+	ON C4.bibnum = I.bibnum
 ;
+--SELECT
+--	  I.code
+--	, I.description
+--	, C2.total_checkouts
+--	, rnk
+--FROM cte2 C2
+--INNER JOIN gold.dim_item_type I
+--	ON C2.type_key = I.type_key
+--WHERE rnk <= 5
+--;
 
 
 -- ======================================================
@@ -113,7 +154,6 @@ SELECT
 	, I.code
 	, I.description
 	, COALESCE(cte2.num_items, 0) AS num_items
-	, 
 FROM gold.dim_item_type I
 LEFT JOIN cte2
 	ON I.type_key = cte2.type_key
@@ -156,7 +196,7 @@ FROM INFORMATION_SCHEMA.COLUMNS;
 
 
 -- ======================================================
--- Most Popular Authors
+-- Most Author Appearances
 -- ======================================================
 
 -- Many authors listed are items by the US Government
@@ -208,23 +248,6 @@ ORDER BY rnk ASC;
 -- This could be modifier to see the latest report date and checkout dates of items if it skips a month
 -- In the below query, we can see that 2,167 items have not been recently updated to be shown in the catalog of Seattle libraries, or were taken out and then
 -- put back in.
-SET STATISTICS TIME ON;
-WITH least_updated AS (
-SELECT
-	bibnum
-	, 
-FROM ##inventory
-WHERE latest_report_date = (SELECT MIN(latest_report_date) FROM ##inventory)
-)
-SELECT
-	C.*
-	, U.latest_report_date
-FROM ##checkouts C
-INNER JOIN least_updated U
-	ON C.bibnum = U.bibnum
-	AND C.checkout_datetime >= DATEADD(MONTH, 1, U.latest_report_date)
-;
-SET STATISTICS TIME OFF;
 
 WITH cte1 AS (
 	SELECT
