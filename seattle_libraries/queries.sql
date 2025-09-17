@@ -138,10 +138,13 @@ ORDER BY rnk ASC;
 
 --CPU time = 344 ms,  elapsed time = 446 ms.
 -- Returns 22,638 rows
+
+-- For Titles that have the oldest reporting date, find the date of the most recent checkout date that is 1 month past to what would be the monthly update
 SET STATISTICS TIME ON;
 WITH least_updated AS (
 SELECT
-	*
+	bibnum
+	, 
 FROM ##inventory
 WHERE latest_report_date = (SELECT MIN(latest_report_date) FROM ##inventory)
 )
@@ -154,3 +157,40 @@ INNER JOIN least_updated U
 	AND C.checkout_datetime >= DATEADD(MONTH, 1, U.latest_report_date)
 ;
 SET STATISTICS TIME OFF;
+
+WITH cte1 AS (
+	SELECT
+		  bibnum
+		, title
+		, author
+		, isbn
+		, pub_year
+		, publisher
+		, latest_report_date
+	FROM ##inventory
+	WHERE latest_report_date = (SELECT MIN(latest_report_date) FROM ##inventory)
+), cte2 AS (
+SELECT
+	  cte1.bibnum
+	, title
+	, author
+	, publisher
+	, cte1.latest_report_date
+	, C.checkout_datetime
+	, C.checkout_id
+	, MAX(checkout_datetime) OVER (PARTITION BY cte1.bibnum) AS latest_checkout_date
+FROM cte1
+INNER JOIN ##checkouts C
+	ON cte1.bibnum = C.bibnum
+)
+SELECT
+	  bibnum
+	, title
+	, author
+	, publisher
+	, latest_report_date
+	, CAST(latest_checkout_date AS DATE) AS latest_checkout_date
+FROM cte2
+WHERE latest_checkout_date >= DATEADD(MONTH, 1, latest_report_date)
+GROUP BY bibnum, title, author, publisher, latest_report_date, latest_checkout_date
+;
