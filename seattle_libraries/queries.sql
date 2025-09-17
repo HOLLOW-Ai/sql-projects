@@ -35,7 +35,7 @@ ORDER BY rnk ASC
 
 
 -- ======================================================
--- Query #: Top Checked out _Books_ Each Month
+-- Top Checked out _Books_ Each Month - Change in Ranking Column? Based on Year, Month
 -- ======================================================
 
 
@@ -91,11 +91,66 @@ FROM INFORMATION_SCHEMA.COLUMNS;
 -- Most Popular Authors
 -- ======================================================
 
+-- Many authors listed are items by the US Government
+WITH grp_authors AS (
+	SELECT
+		  author
+		, COUNT(bibnum) AS titles_published
+		, DENSE_RANK() OVER (ORDER BY COUNT(bibnum) DESC) AS rnk
+	FROM ##inventory
+	WHERE author IS NOT NULL
+	GROUP BY author
+)
+SELECT
+	  author
+	, titles_published
+FROM grp_authors
+ORDER BY rnk ASC;
+
+SELECT *
+FROM ##inventory
+WHERE author = 'United States. Congress. House. Committee on Rules';
+
 -- ======================================================
 -- Most Popular Publishers, although may vary
 -- ======================================================
+
+-- You can see the different ways users inputted publishers with different formatting
+WITH grp_publishers AS (
+	SELECT
+		  publisher
+		, COUNT(bibnum) AS titles_published
+		, DENSE_RANK() OVER (ORDER BY COUNT(bibnum) DESC) AS rnk
+	FROM ##inventory
+	WHERE publisher IS NOT NULL
+	GROUP BY publisher
+)
+SELECT
+	  publisher
+	, titles_published
+FROM grp_publishers
+ORDER BY rnk ASC;
 
 
 -- ======================================================
 -- Items with the Oldest Report Date + Record where it was last checked out
 -- ======================================================
+
+--CPU time = 344 ms,  elapsed time = 446 ms.
+-- Returns 22,638 rows
+SET STATISTICS TIME ON;
+WITH least_updated AS (
+SELECT
+	*
+FROM ##inventory
+WHERE latest_report_date = (SELECT MIN(latest_report_date) FROM ##inventory)
+)
+SELECT
+	C.*
+	, U.latest_report_date
+FROM ##checkouts C
+INNER JOIN least_updated U
+	ON C.bibnum = U.bibnum
+	AND C.checkout_datetime >= DATEADD(MONTH, 1, U.latest_report_date)
+;
+SET STATISTICS TIME OFF;
