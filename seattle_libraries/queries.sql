@@ -143,92 +143,73 @@ ORDER BY rnk ASC
 -- A quick way to check if a bibnum is assigned multiple types is to do a distinct of bibnum and type_key, and then have a cte based off that
 -- to do another group by bibnum and do HAVING COUNT(*) > 1
 
-WITH cte1 AS (
-	SELECT
-		  bibnum
-		, type_key
-		, LAG(type_key) OVER (PARTITION BY bibnum ORDER BY type_key) AS lag_type
-		, LEAD(type_key) OVER (PARTITION BY bibnum ORDER BY type_key) AS lead_type
-	FROM ##checkouts
-	GROUP BY bibnum, type_key
-),
-cte2 AS (
-	SELECT
-		  bibnum
-		, type_key
-		, CASE
-			WHEN lag_type IS NOT NULL OR lead_type IS NOT NULL THEN 1
-			ELSE 0
-		  END AS marker
-	FROM cte1
-),
-cte3 AS (
-	SELECT
-		type_key
-		, COUNT(DISTINCT bibnum) AS unique_items
-		, SUM(marker) AS flag_total
-	FROM cte2
-	GROUP BY type_key
-), cte4 AS (
--- Columns: Code, Code Description, # of Titles identified as the Code, % of Items that Overlap as Other Types/Collections
--- At the 8 min mark of the query somehow
-SELECT
-	  T.code
-	, T.type_key
-	, T.description
-	--, C3.unique_items -- Add COALESCE()
-	, C3.flag_total -- This column slowing down the entire query somehow
-FROM gold.dim_item_type T
-INNER JOIN cte3 C3 -- If I choose to keep the flag_total, then changing LEFT JOIN to INNER JOIN will actually compute the query in 5 seconds
-	ON T.type_key = C3.type_key
-)
-SELECT *
-FROM cte4;
-
-
-
-
--- Does a Bibnum appear more than once
 WITH combos AS (
 	-- Total of 474,789 rows
+	-- Check 3959380, 724463, 3482508
+
+	-- Get the unique combos of Bibnum and Type
 	SELECT bibnum, type_key
 	FROM ##checkouts
 	GROUP BY bibnum, type_key
 )
-, flag_items AS(
+
+, repeated_items AS (
+	
+	-- Filter down to a list of items that are assigned more than 1 type key
 	SELECT
-		bibnum
-		, COUNT(*) AS appearance
+		  bibnum
+		, COUNT(DISTINCT type_key) AS key_count
 	FROM combos
 	GROUP BY bibnum
-)
-, flag_totals AS (
-SELECT
-	  type_key
-	, SUM(CASE WHEN appearance > 1 THEN 1 ELSE 0 END) AS flag
-FROM combos C
-INNER JOIN flag_items F
-	ON C.bibnum = F.bibnum
-GROUP BY type_key
-)
--- CPU time = 213797 ms,  elapsed time = 214230 ms.; 3:34 to run
-SELECT
-	I.type_key
-	, COALESCE(flag, 0)
-FROM gold.dim_item_type I
-LEFT JOIN flag_totals F -- Spending all of the time in the Nested Loops (LEFT JOIN) step
-	ON I.type_key = F.type_key
+	HAVING COUNT(*) > 1
 
--- From the execution plan and Stack Overflow
+)
 
+, flagged_items AS (
+
+	-- Flag for each item that is in repeated_items CTE with 1, otherwise 0
+	SELECT
+		  C.bibnum
+		, C.type_key
+		, CASE WHEN R.key_count IS NOT NULL THEN 1 ELSE 0 END AS marker -- Will want to SUM() this later
+	FROM combos C
+	LEFT JOIN repeated_items R
+		ON C.bibnum = R.bibnum
+
+)
+, grp_types AS (
+	
+	-- Get the items classified as each type, and a sum of the marker
+	SELECT
+		  type_key
+		, SUM(marker) AS sum_total
+		, COUNT(DISTINCT bibnum) AS titles
+	FROM flagged_items
+	GROUP BY type_key
+)
+, generate_vals AS (
+	SELECT value -- This is being made to avoid doing a LEFT JOIN because that dramatically slows the entire query
+	FROM GENERATE_SERIES((SELECT MIN(type_key) FROM gold.dim_item_type), 
+						(SELECT MAX(type_key) FROM gold.dim_item_type))
+), cte5 AS (
+	SELECT
+		  value AS type_key
+		, COALESCE(sum_total, 0) AS titles_overlapped
+		, COALESCe(titles, 0) AS unique_titles
+	FROM generate_vals
+	LEFT JOIN grp_types
+		ON generate_vals.value = grp_types.type_key
+)
 --SELECT
---	  type_key
---	, C.bibnum
---	--, appearance
---	, CASE WHEN appearance > 1 THEN 1 ELSE 0 END AS flag
---FROM combos C
---INNER JOIN flag_items F
---	ON C.bibnum = F.bibnum
+--	code
+--	, description
+--	, titles_overlapped
+--	, unique_titles
+--FROM cte5 C
+--INNER JOIN gold.dim_item_type T
+--	ON C.type_key = T.type_key
+SELECT *
+FROM cte5
 
 
 -- ======================================================
