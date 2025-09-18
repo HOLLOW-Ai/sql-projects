@@ -143,6 +143,13 @@ ORDER BY rnk ASC
 -- A quick way to check if a bibnum is assigned multiple types is to do a distinct of bibnum and type_key, and then have a cte based off that
 -- to do another group by bibnum and do HAVING COUNT(*) > 1
 
+-- Creating a Temp table to store the results of cte5
+CREATE TABLE ##cte5 (
+	type_key INT,
+	titles_overlapped INT,
+	unique_titles INT
+);
+
 WITH combos AS (
 	-- Total of 474,789 rows
 	-- Check 3959380, 724463, 3482508
@@ -200,16 +207,49 @@ WITH combos AS (
 	LEFT JOIN grp_types
 		ON generate_vals.value = grp_types.type_key
 )
---SELECT
---	code
---	, description
---	, titles_overlapped
---	, unique_titles
---FROM cte5 C
---INNER JOIN gold.dim_item_type T
---	ON C.type_key = T.type_key
-SELECT *
-FROM cte5
+INSERT INTO ##cte5 (type_key, titles_overlapped, unique_titles)
+	SELECT type_key, titles_overlapped, unique_titles
+	FROM cte5;
+
+-- Running this again with temp table
+-- Barely takes a second to run
+SELECT
+	  code
+	, description
+	, titles_overlapped
+	, unique_titles
+FROM ##cte5 C
+INNER JOIN gold.dim_item_type T
+	ON C.type_key = T.type_key
+
+--SELECT *
+--FROM cte5;
+
+
+-- Getting the results from cte5 takes 4 seconds to run to return 111 rows
+
+-- Running it with the JOIN query at the end has it take 2:05m to run
+-- Execution plan does indicate that the silver.dictionary table does use the NCL test index
+-- It also recommend to create a new NCL that would impact the query 47.59%
+
+/*
+Missing Index Details from SQLQuery4.sql - DESKTOP-MVR5P9J\SQLEXPRESS.library (DESKTOP-MVR5P9J\Mary Huynh (61))
+The Query Processor estimates that implementing the following index could improve the query cost by 47.5869%.
+*/
+
+/*
+USE [tempdb]
+GO
+CREATE NONCLUSTERED INDEX idx_type_bibnum
+ON [dbo].[##checkouts] ([type_key])
+INCLUDE ([bibnum])
+GO
+*/
+
+--DROP INDEX idx_type_bibnum ON ##checkouts;
+
+-- In fact, creating the above query makes the query take LONGER. Takes 3:43m. But this is with not include the USE [tempdb]
+-- Swithced to [tempdb], created the index, switched back the library db to run the query
 
 
 -- ======================================================
