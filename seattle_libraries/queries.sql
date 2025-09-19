@@ -1,3 +1,20 @@
+/*
+USE library;
+
+EXEC gold.temp_checkout_heap;
+
+EXEC gold.temp_inv_heap;
+
+CREATE NONCLUSTERED INDEX idx_bibnum_type ON ##checkouts (bibnum, type_key);
+--CREATE CLUSTERED INDEX idx_checkout_id ON ##checkouts (checkout_id);
+
+CREATE CLUSTERED INDEX idx_bibnum ON ##inventory (bibnum);
+
+SET STATISTICS TIME ON;
+
+CREATE NONCLUSTERED INDEX idx_test ON silver.dictionary (code, code_type);
+*/
+
 -- ======================================================
 -- Top 10 Items Checked Out Overall
 -- ======================================================
