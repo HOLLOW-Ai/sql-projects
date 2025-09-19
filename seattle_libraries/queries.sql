@@ -252,6 +252,44 @@ GO
 -- Swithced to [tempdb], created the index, switched back the library db to run the query
 
 
+CREATE TABLE ##item_col_pairs (bibnum INT, col_key INT);
+INSERT INTO ##item_col_pairs (bibnum, col_key)
+	SELECT bibnum, col_key
+		FROM ##checkouts
+		GROUP BY bibnum, col_key;
+SELECT
+	  col_key
+	, 
+	(SELECT col_key
+	FROM (
+		SELECT col_key, COUNT(*) AS test, ROW_NUMBER() OVER (ORDER BY COUNT(*)) AS rnk
+		FROM 
+			(
+				SELECT bibnum, col_key
+				FROM ##item_col_pairs T3
+				WHERE EXISTS (
+								SELECT 1 FROM
+									(
+									SELECT bibnum
+									FROM ##item_col_pairs T2
+									WHERE T1.col_key = T2.col_key
+									) t
+								WHERE T3.bibnum = t.bibnum
+							)
+				AND T3.col_key != T1.col_key
+			) T4
+		GROUP BY col_key
+		) T5
+		WHERE rnk = 1
+		)
+
+		
+FROM ##item_col_pairs T1
+GROUP BY T1.col_key
+
+
+
+	
 -- ======================================================
 -- Most Author Appearances
 -- ======================================================
