@@ -269,7 +269,7 @@ SELECT
 	(SELECT col_key
 	FROM (
 		SELECT col_key
-		--, COUNT(*) AS test
+		--, COUNT(*) AS test 		-- if i decide to calculate the perc of overlap might add this back later
 		, ROW_NUMBER() OVER (ORDER BY COUNT(*)) AS rnk
 		FROM 
 			(
