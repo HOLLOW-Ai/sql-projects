@@ -257,35 +257,46 @@ INSERT INTO ##item_col_pairs (bibnum, col_key)
 	SELECT bibnum, col_key
 		FROM ##checkouts
 		GROUP BY bibnum, col_key;
+
+CREATE NONCLUSTERED INDEX idx_bibnum ON ##item_col_pairs (bibnum);
+DROP INDEX idx_bibnum ON ##item_col_pairs;
+
+-- Incredible. Racking my head wondering how to improve execution time from 34s, and then added a NCL index on the bibnum of the temp table
+-- Runtime is 4 seconds now
 SELECT
 	  col_key
 	, 
 	(SELECT col_key
 	FROM (
-		SELECT col_key, COUNT(*) AS test, ROW_NUMBER() OVER (ORDER BY COUNT(*)) AS rnk
+		SELECT col_key
+		--, COUNT(*) AS test
+		, ROW_NUMBER() OVER (ORDER BY COUNT(*)) AS rnk
 		FROM 
 			(
-				SELECT bibnum, col_key
+				SELECT col_key, bibnum
 				FROM ##item_col_pairs T3
 				WHERE EXISTS (
+								
 								SELECT 1 FROM
 									(
+									-- Get all the associated items with the col_key the row it is currently on
 									SELECT bibnum
 									FROM ##item_col_pairs T2
 									WHERE T1.col_key = T2.col_key
 									) t
 								WHERE T3.bibnum = t.bibnum
+								AND T3.col_key != T1.col_key
+
 							)
-				AND T3.col_key != T1.col_key
+				--AND T3.col_key != T1.col_key
 			) T4
 		GROUP BY col_key
 		) T5
-		WHERE rnk = 1
-		)
-
-		
+	WHERE rnk = 1
+	)
 FROM ##item_col_pairs T1
 GROUP BY T1.col_key
+ORDER BY col_key
 
 
 
