@@ -22,6 +22,10 @@ GROUP BY code, description, code_type, format_group, format_subgroup, cat_group,
 HAVING COUNT(*) > 1
 ;
 ```
+There are no duplicates as far as I can tell. It's possible there misspellings, whitespace, or cases. As far as I know, MSSQL is case insensitive by default, so different capitalizations don't matter. Moving on to the next step, but will refer back to this code block if there is white space.
+
 ### 2. Checking for Null Values
 
 ### 3. Checking Cardinality
+
+### 4. Checking Size of Columns
