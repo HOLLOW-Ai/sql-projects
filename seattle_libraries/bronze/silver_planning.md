@@ -62,6 +62,20 @@ FROM bronze.dictionary
 I have already decided to not include "Location" in the silver table. I was confused on what "ItemTypeDetail" meant so filtering to that type leads to only one code named "HOTSPOT". I checked out the `checkouts` table and found some records where the `item_type` is listed as "HOTSPOT". Considering how few those rows are, I opted to remove the "HOTSPOT" rows in both tables because in the gold layer, I want to make views that separate the rows that are listed as "ItemType" and "ItemCollection".
 
 ### 4. Checking Size of Columns
+Admittedly, the dictionary table was created using specified sizes rather than MAX, so this section isn't that necessary. However, considering the size of the checkouts.csv file, every bit of memory and storage counts. We'll see if we can reduce the sizes of the columns.
+```sq;
+SELECT
+      LEN(code)
+    , LEN(description)
+    , LEN(code_type)
+    , LEN(format_group)
+    , LEN(format_subgroup)
+    , LEN(cat_group)
+    , LEN(cat_subgroup)
+    , LEN(age_group)
+FROM bronze.dictionary
+;
+```
 
 ### 5. Checking for Whitespace
 This would just be checked using LEN() and TRIM() in combination. LOWER() if you want to be certain. I'll only write it once for the Data Dictionary table because the other two tables are too big to be doing string checks and I have different plans on handling those tables.
@@ -96,3 +110,4 @@ No issues with whitespace. Thankfully, the datasets uploaded from Seattle were r
 - Remove `HOTSPOT` from both dictionary and checkout tables
 - Remove `Location` from dictionary when moving to silver table
 - Replace `NULL` values in group and subgroup columns
+- Reduce size of columns in silver table creation
