@@ -7,10 +7,20 @@ This document tracks the changes I plan to make to ensure the data loaded in the
 Considering this table is meant to lookup the description for the differnt codes used in the other tables, I would expect every row to be unique.
 
 ### 1. Checking Duplicates
-```
+```sql
 SELECT
+    code
+  , description
+  , code_type
+  , format_group
+  , format_subgroup
+  , cat_group
+  , cat_subgroup
+  , age_group
 FROM bronze.dictionary
-GROUP BY 
+GROUP BY code, description, code_type, format_group, format_subgroup, cat_group, cat_subgroup, age_group    -- I do opt to use GROUP BY instead of DISTINCT for performance reasons and to help build as a habit
+HAVING COUNT(*) > 1
+;
 ```
 ### 2. Checking for Null Values
 
