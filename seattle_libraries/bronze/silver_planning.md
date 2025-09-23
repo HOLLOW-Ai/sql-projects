@@ -88,5 +88,11 @@ WHERE LEN(lw_code) = LEN(TRIM(lw_code))
     OR LEN(lw_cg) = LEN(TRIM(lw_cg))
     OR LEN(lw_csg) = LEN(TRIM(lw_csg))
     OR LEN(lw_ag) = LEN(TRIM(lw_ag))
+;
 ```
 No issues with whitespace. Thankfully, the datasets uploaded from Seattle were relatively clean.
+
+### Changes to be Made
+- Remove `HOTSPOT` from both dictionary and checkout tables
+- Remove `Location` from dictionary when moving to silver table
+- Replace `NULL` values in group and subgroup columns
