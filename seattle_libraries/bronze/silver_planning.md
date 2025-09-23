@@ -111,3 +111,14 @@ No issues with whitespace. Thankfully, the datasets uploaded from Seattle were r
 - Remove `Location` from dictionary when moving to silver table
 - Replace `NULL` values in group and subgroup columns
 - Reduce size of columns in silver table creation
+
+## Inventory Catalog Table
+
+This table is meant to be a bibliographic snapshot record of books in circulation at Seattle Libraries. Meaning, that the same item (indicated by the BibNum) can show up multiple times because it has snapshots at different points in time.
+
+Honestly, the most frustrating table to work with. My assumption is that these items are inputted manually, because for the same item the inputs can be way different or just left `NULL`. There is no consistent way of inputting the data. I should say that the dataset included a `Location` column of where the item currently was at the time of the snapshot, but I had removed it due to storage concerns. This makes me think that it is different librarians who input these records. Absolutely maddening while I figured out how I wanted to transform this data.
+
+An example of a frustration:
+```sql
+
+```
