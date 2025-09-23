@@ -37,6 +37,7 @@ SELECT
     , COUNT(*) - COUNT(age_group) AS age_group
     , COUNT(*) AS num_rows
 FROM bronze.dictionary
+;
 ```
 I have made a `null_report` script meant for the gold layer, but I repurposed it here because I had accidentally removed this code block while practicing. I am skipping the the UNPIVOT step here because the focus is on one table right now.
 
@@ -45,5 +46,21 @@ There are NULLs in the columns beginning at `format_group` to `age_group`. Note 
 I was unsure how to handle the NULLs here, because for the column `format_group` there exists a value of "Other" that is used for some of the rows, but some are left NULL regardless, excluding the "Location" rows. The source doesn't provide the meaning of these values and why some are left blank. I decide later on that if the proportion of NULL values in a column isn't "large" (More than 30%, I suppose) then I opted to use a CASE WHEN statement to change NULLs to "N/A". If there were a large amount of NULL values, I opted to keep the NULLs mainly to draw attention to it to whoever views the dataset later. I don't think this is an optimal strategy, but this is all practice and will be dependent on whatever business rules are in place.
 
 ### 3. Checking Cardinality
+I won't be doing a cardinality check for all columns here, but I wanted to highlight the `code_type` column:
+```sql
+SELECT DISTINCT code_type
+FROM bronze.dictionary
+;
+```
+|code_type|
+|---------|
+|ItemCollection|
+|ItemType|
+|ItemTypeDetail|
+|Location|
+
+I have already decided to not include "Location" in the silver table. I was confused on what "ItemTypeDetail" meant so filtering to that type leads to only one code named "HOTSPOT". I checked out the `checkouts` table and found some records where the `item_type` is listed as "HOTSPOT". Considering how few those rows are, I opted to remove the "HOTSPOT" rows in both tables because in the gold layer, I want to make views that separate the rows that are listed as "ItemType" and "ItemCollection".
 
 ### 4. Checking Size of Columns
+
+### 5. Checking for Whitespace
