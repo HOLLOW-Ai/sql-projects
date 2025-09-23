@@ -64,3 +64,29 @@ I have already decided to not include "Location" in the silver table. I was conf
 ### 4. Checking Size of Columns
 
 ### 5. Checking for Whitespace
+This would just be checked using LEN() and TRIM() in combination. LOWER() if you want to be certain. I'll only write it once for the Data Dictionary table because the other two tables are too big to be doing string checks and I have different plans on handling those tables.
+```sql
+WITH lowercase_cte AS (
+    SELECT
+        LOWER(code) AS lw_code
+      , LOWER(description) AS lw_desc
+      , LOWER(code_type) AS lw_type
+      , LOWER(format_group) AS lw_fg
+      , LOWER(format_subgroup) AS lw_fsg
+      , LOWER(cat_group) AS lw_cg
+      , LOWER(cat_subgroup) AS lw_csg
+      , LOWER(age_group) AS lw_ag
+    FROM bronze.dictionary
+)
+SELECT *    -- * for laziness and I know there is at most 640 rows in this dataset, so it's not a big performance issue
+FROM lowercase_cte
+WHERE LEN(lw_code) = LEN(TRIM(lw_code))
+    OR LEN(lw_desc) = LEN(TRIM(lw_desc))
+    OR LEN(lw_type) = LEN(TRIM(lw_type))
+    OR LEN(lw_fg) = LEN(TRIM(lw_fg))
+    OR LEN(lw_fsg) = LEN(TRIM(lw_fsg))
+    OR LEN(lw_cg) = LEN(TRIM(lw_cg))
+    OR LEN(lw_csg) = LEN(TRIM(lw_csg))
+    OR LEN(lw_ag) = LEN(TRIM(lw_ag))
+```
+No issues with whitespace. Thankfully, the datasets uploaded from Seattle were relatively clean.
