@@ -26,6 +26,6 @@ CREATE TABLE silver.inventory (
 	, isbn NVARCHAR(2000)
 	, pub_year NVARCHAR(250)
 	, publisher NVARCHAR(500)
-	, item_type NVARCHAR(20)
-	, latest_report_date DATE
+	--, item_type NVARCHAR(20)	End up deciding to remove this later down the line
+	, report_date DATE
 );
