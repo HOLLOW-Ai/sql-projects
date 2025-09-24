@@ -7,6 +7,7 @@
   I didn't think it fit in the other folders so it was to keep the clean scripts separate from the mess of my working queries.
 */
 
+-- working.sql
 
 SELECT TOP 10 *
 FROM bronze.dictionary
@@ -284,3 +285,221 @@ FROM cte_dictionary
 SELECT *
 FROM silver.dictionary
 WHERE code like '%HOTSPOT%';
+
+
+-- workv2.sql
+
+SELECT DISTINCT bibnum, title, author, isbn
+FROM loading L1
+WHERE NOT EXISTS (
+	SELECT 1
+	FROM loading L2
+	WHERE L1.bibnum != L2.bibnum
+		AND L1.title = L2.title
+		AND L1.author = L2.author
+		AND L1.isbn = L2.isbn
+	)
+AND bibnum = 4031834;
+
+SELECT DISTINCT bibnum, title, author, isbn, pub_year, publisher, item_type, ROW_NUMBER() OVER (
+																							PARTITION BY bibnum, title, author, isbn, pub_year, publisher, item_type
+																							ORDER BY bibnum, title, author, isbn) AS rn
+FROM loading
+WHERE bibnum IN (
+	SELECT bibnum
+	FROM loading
+	GROUP BY bibnum
+	HAVING COUNT(*) > 1
+	)
+ORDER BY bibnum, rn
+;
+
+SELECT TOP 10 bibnum
+FROM loading
+ORDER BY bibnum;
+
+
+-- Presumably, the bibnum is an indiciation of the relative order of when an item is catalogued in the seattle libraries
+SELECT bibnum, title
+FROM loading L1
+WHERE EXISTS (
+			SELECT 1
+			FROM loading L2
+			WHERE L1.bibnum < L2.bibnum
+			AND L1.isbn = L2.isbn
+			)
+AND bibnum < 1000
+;
+
+WITH RankedBooks AS (
+    SELECT 
+        bibnum, 
+        isbn, 
+        title, 
+        ROW_NUMBER() OVER (PARTITION BY isbn ORDER BY bibnum ASC) AS row_num
+    FROM loading
+)
+SELECT bibnum, title
+FROM RankedBooks
+WHERE row_num > 1;
+
+
+-- Maybe I drop Item_Collection and Item_location from "Loading"
+
+SELECT DISTINCT
+	  bibnum
+	, title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, item_type
+FROM loading
+WHERE bibnum IN (
+					SELECT bibnum
+					FROM loading
+					GROUP BY bibnum
+					HAVING COUNT(*) > 1
+				)
+ORDER BY bibnum;
+
+-- Adult/YA description, Ref Adult/YA
+SELECT *
+FROM silver.dictionary
+WHERE code IN ('arbk', 'acbk');
+
+
+SELECT COUNT(bibnum)
+FROM loading;
+
+-- 12 seconds
+WITH cte AS (
+SELECT DISTINCT
+	  bibnum
+	, title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, item_type
+FROM loading
+)
+SELECT COUNT(bibnum)
+FROM cte;
+
+-- 12 seconds too
+WITH cte2 AS (
+	SELECT
+		  bibnum
+		, title
+		, author
+		, isbn
+		, pub_year
+		, publisher
+		, item_type
+	FROM loading
+	GROUP BY bibnum, title, author, isbn, pub_year, publisher, item_type
+)
+SELECT COUNT(bibnum)
+FROM cte2;
+
+
+WITH reduced_tbl AS (
+	SELECT DISTINCT
+		  bibnum
+		, title
+		, author
+		, isbn
+		, pub_year
+		, publisher
+		, item_type
+	FROM loading
+)
+SELECT
+	  bibnum
+	, title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, item_type
+INTO silver.catalog
+FROM reduced_tbl
+;
+
+SELECT *
+FROM silver.catalog;
+
+SELECT *
+FROM silver.catalog
+GROUP BY title
+HAVING COUNT(*) > 1
+ORDER BY bibnum;
+
+SELECT *
+FROM silver.catalog
+WHERE bibnum = 4031834;
+
+-- Bibnums have rows where the only filled data is the bibnum and item_type, and next record for the same Bibnum has all the info filled out
+-- Maybe create a another table in a CTE or whatever with filtering to make sure no data is missing and then join to use COALESCE()
+-- LAG and LEAD? Combined with CASE WHEN and COALESCE
+SELECT *, ROW_NUMBER() OVER (PARTITION BY bibnum ORDER BY bibnum) AS rn
+FROM silver.catalog
+WHERE bibnum IN (
+	SELECT bibnum
+	FROM silver.catalog
+	WHERE isbn IS NULL
+	GROUP BY bibnum
+)
+ORDER BY isbn DESC, bibnum, rn;
+
+SELECT *
+FROM silver.catalog
+WHERE title IS NULL;
+
+SELECT *
+FROM silver.catalog
+WHERE bibnum = 1271782;
+
+-- 889,278 rows vs 857,586 distinct IDs: 31,692 difference
+SELECT COUNT(*)
+FROM silver.catalog;
+
+SELECT COUNT(DISTINCT bibnum)
+FROM silver.catalog;
+
+
+-- This returns 30,438 BibNums have multiple records
+-- 827,148 items have its BibNum show up only once
+
+WITH cte2 AS (
+SELECT DISTINCT
+	  bibnum
+	, title
+	, author
+	, isbn
+	, pub_year
+	, publisher
+	, item_type
+	, ROW_NUMBER() OVER (PARTITION BY bibnum ORDER BY isbn DESC) AS rn
+FROM silver.catalog
+WHERE bibnum IN (
+					SELECT bibnum
+					FROM silver.catalog
+					GROUP BY bibnum
+					HAVING COUNT(*) > 1
+				)
+)
+SELECT T1.bibnum, T1.title, T1.item_type, T2.bibnum, T2.title, T2.item_type
+FROM cte2 T1
+INNER JOIN cte2 T2
+	ON T1.title = T2.title
+	AND T1.item_type = T2.item_type
+WHERE T1.bibnum != T2.bibnum
+--SELECT DISTINCT T1.bibnum, T1.title, T2.bibnum, T2.title
+--FROM cte2 T1
+--INNER JOIN cte2 T2
+--	ON T1.bibnum = T2.bibnum
+--WHERE T1.title != T2.title AND T1.title < T2.title
+--ORDER BY T1.bibnum
+--;
