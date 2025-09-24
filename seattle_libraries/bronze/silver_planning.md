@@ -124,7 +124,24 @@ SELECT
       bibnum
     , author
     , isbn
-FROM bronze.inventory
+    , report_date
+FROM bronze.catalog
 WHERE bibnum = 4031834
-GROUP BY bibnum, author, isbn
+GROUP BY bibnum, author, isbn, report_date
+;
 ```
+We see here what appears to be the case of an item being ascribed the wrong BibNum. Other examples of data inconsistency issues include difference in spelling of the title for the same author, weird formatting with the publish year, different author spellings, etc.
+```sql
+-- Spelling diff of title, isbn has 1+, pub_year weird format, publisher spelling diff
+SELECT DISTINCT *
+FROM loading
+WHERE bibnum = 8157
+;
+
+-- Spelling diff of Author
+SELECT DISTINCT *
+FROM loading
+WHERE bibnum = 19786
+;
+```
+At this point, I decided that we are going to turn the inventory catalog into a dimension table where there is a unique BibNum; each physical item should only have one row. Latest report date for an item takes priority. If any of the columns are `NULL` for the latest report date, then we're 
