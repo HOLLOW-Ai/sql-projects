@@ -7,3 +7,14 @@ CREATE TABLE silver.checkout_records (
 		, item_title NVARCHAR(400)
 		, checkout_datetime DATETIME
 );
+
+CREATE TABLE silver.dictionary (
+	  code NVARCHAR(20)
+	, description NVARCHAR(100)
+	, code_type NVARCHAR(25)
+	, format_group NVARCHAR(20)
+	, format_subgroup NVARCHAR(20)
+	, cat_group NVARCHAR(25)
+	, cat_subgroup NVARCHAR(20)
+	, age_group NVARCHAR(20)
+);
