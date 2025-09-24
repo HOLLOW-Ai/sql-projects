@@ -120,5 +120,11 @@ Honestly, the most frustrating table to work with. My assumption is that these i
 
 An example of a frustration:
 ```sql
-
+SELECT
+      bibnum
+    , author
+    , isbn
+FROM bronze.inventory
+WHERE bibnum = 4031834
+GROUP BY bibnum, author, isbn
 ```
