@@ -125,18 +125,6 @@ GO
 
 
 
--- Testing queries
-SELECT *
-FROM silver.checkout_records
-WHERE bibnum = 439801;
-
-SELECT *
-FROM silver.inventory
-WHERE author IS NULL
-AND title IS NULL
-AND isbn IS NULL
-;
-
 SELECT
 	  bibnum
 	, item_type
@@ -238,11 +226,6 @@ WHERE EXISTS (
 				SELECT 1 FROM cte WHERE cte.id = R.id
 			);
 
-SELECT *
-FROM INFORMATION_SCHEMA.VIEWS;
-
-SELECT COUNT(*)
-FROM gold.dim_inventory;
 
 -- Just move forward with this
 SELECT
@@ -255,7 +238,3 @@ SELECT
 	, MAX(report_date) AS latest_report_date
 FROM silver.inventory
 GROUP BY bibnum;
-
-
-SELECT TOP 100 *
-FROM gold.fact_checkouts;
