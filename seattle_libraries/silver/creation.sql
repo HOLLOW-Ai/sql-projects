@@ -18,3 +18,14 @@ CREATE TABLE silver.dictionary (
 	, cat_subgroup NVARCHAR(20)
 	, age_group NVARCHAR(20)
 );
+
+CREATE TABLE silver.inventory (
+	  bibnum INT
+	, title NVARCHAR(2000)
+	, author NVARCHAR(500)
+	, isbn NVARCHAR(2000)
+	, pub_year NVARCHAR(250)
+	, publisher NVARCHAR(500)
+	, item_type NVARCHAR(20)
+	, latest_report_date DATE
+);
