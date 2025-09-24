@@ -1,3 +1,4 @@
+-- silver.inventory
 WITH scan_table AS (
 	SELECT
 		  bibnum
@@ -48,3 +49,39 @@ SELECT
 	, item_type
 	, report_date
 FROM final_table;
+
+-- silver.dictionary
+WITH cte_dictionary AS (
+	SELECT 
+		  code
+		, description
+		, code_type
+		, format_group
+		, format_subgroup
+		, cat_group
+		, cat_subgroup
+		, age_group
+	FROM bronze.dictionary
+	WHERE code NOT LIKE '%HOTSPOT%'
+)
+INSERT INTO silver.dictionary (
+	  code
+	, description
+	, code_type
+	, format_group
+	, format_subgroup
+	, cat_group
+	, cat_subgroup
+	, age_group
+)
+SELECT
+	  code
+	, description
+	, code_type
+	, format_group
+	, format_subgroup
+	, cat_group
+	, cat_subgroup
+	, age_group
+FROM cte_dictionary
+;
