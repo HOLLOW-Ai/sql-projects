@@ -24,16 +24,16 @@ GO
 */
 
 -- This table contains the bibliographic record snapshots of the books the Seattle libraries have at the time of the monthly count
-CREATE TABLE bronze.catalog (
-	  bibnum NVARCHAR(MAX)
+CREATE TABLE bronze.raw_inv (
+	  bibnum INT
 	, title NVARCHAR(MAX)
 	, author NVARCHAR(MAX)
 	, isbn NVARCHAR(MAX)
 	, pub_year NVARCHAR(MAX)
 	, publisher NVARCHAR(MAX)
-	, item_type NVARCHAR(MAX)
-	, item_col NVARCHAR(MAX)
-	--, item_loc NVARCHAR(MAX)
+	--, item_type NVARCHAR(MAX)
+	--, item_col NVARCHAR(MAX)
+	, report_date DATE
 );
 
 -- This table contains the Lookup table of Horizon and borrower codes of the Seattle libraries
