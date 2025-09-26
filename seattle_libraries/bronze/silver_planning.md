@@ -144,4 +144,25 @@ FROM loading
 WHERE bibnum = 19786
 ;
 ```
-At this point, I decided that we are going to turn the inventory catalog into a dimension table where there is a unique BibNum; each physical item should only have one row. Latest report date for an item takes priority. If any of the columns are `NULL` for the latest report date, then we're 
+At this point, I decided that we are going to turn the inventory catalog into a dimension table where there is a unique BibNum; each physical item should only have one row. Latest report date for an item takes priority. If any of the columns are `NULL` for the latest report date, then we're going to use MAX() to find a non-Null value to impute.
+
+The loading process was done using CTEs. The rows that were filtered out were any duplicate BibNums. I used ROW_NUMBER() and ordered by report_date to number the latest reported info as 1. If any of the columns happen to be `NULL` for the latest report record, then it will use the values found using the MAX() window function to impute values with COALESCE().
+
+### Changes to be Made
+- Use `ROW_NUMBER()` and order by `report_date` descending
+- `COALESCE()` on the rows numbered 1 and use the values from the MAX(column) window function columns to impute values
+- Reduce size of columns
+
+## Checkout Records Table
+
+Biggest table by around ~16 million rows. The records date from January 1, 2020 to September 9, 2025. According to the source page, each record is a checkout record. Renewals are not included. The data is anonymized. The only "identifying" information there is is a checkout ID row. There were more columns in the original dataset; however, just downloading the checkout records from 2020-2025 with 3 less columns already was taking up ~5 GB of the 10 GB database limit on SQL Server Management Studio (I have Express edition).
+
+### 1. Checking Duplicates
+
+### 2. Checking for Null Values
+
+### 3. Checking Cardinality
+
+### 4. Checking Size of Columns
+
+### 5. Checking for Whitespace
