@@ -148,6 +148,19 @@ At this point, I decided that we are going to turn the inventory catalog into a 
 
 The loading process was done using CTEs. The rows that were filtered out were any duplicate BibNums. I used ROW_NUMBER() and ordered by report_date to number the latest reported info as 1. If any of the columns happen to be `NULL` for the latest report record, then it will use the values found using the MAX() window function to impute values with COALESCE().
 
+### 1. Checking Duplicates
+Without the item collection and item type columns, you'll end up with some duplicate rows. Furthermore, removing the report date column will increase the number of duplicates if you are focusing on records that have the the `BibNum`. If you do include title, you'll end up with records with the same `BibNum` but slightly different titles because either the spelling or punctuation is off. Same with author, publisher, publish year, etc.
+
+### 2. Checking for Null Values
+There are a lot of `NULL` values in the `author`, `title`, `pub_year`, `publisher`, and `isbn` columns. There are not any `NULL` values in the `BibNum` column. Instead of getting rid of the rows, we'll keep one row for each unique `BibNum` and impute any `NULL` values with a non-NULL value for the same `BibNum` using `COALESCE()`.
+
+### 3. Checking Cardinality
+Each column is going to have a high cardinality. You would think the `pub_year` column would have a lower cardinality, even if it is a wide range of year, but as per the FAQ of the source dataset, the `pub_year` column has many different formats for the year that could be due to copyright, approximate publish year, a range of years, etc. This is also why you can't cast the `pub_year` column as an integer.
+
+### 4. Checking Size of Columns
+
+### 5. Checking for Whitespace
+
 ### Changes to be Made
 - Use `ROW_NUMBER()` and order by `report_date` descending
 - `COALESCE()` on the rows numbered 1 and use the values from the MAX(column) window function columns to impute values
