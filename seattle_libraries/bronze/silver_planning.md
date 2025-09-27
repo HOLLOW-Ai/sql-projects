@@ -158,8 +158,20 @@ There are a lot of `NULL` values in the `author`, `title`, `pub_year`, `publishe
 Each column is going to have a high cardinality. You would think the `pub_year` column would have a lower cardinality, even if it is a wide range of year, but as per the FAQ of the source dataset, the `pub_year` column has many different formats for the year that could be due to copyright, approximate publish year, a range of years, etc. This is also why you can't cast the `pub_year` column as an integer.
 
 ### 4. Checking Size of Columns
+```sql
+SELECT
+      LEN(bibnum)
+    , LEN(title)
+    , LEN(author)
+    , LEN(isbn)
+    , LEN(pub_year)
+    , LEN(publisher)
+FROM bronze.raw_inv
+;
+```
 
 ### 5. Checking for Whitespace
+I won't write it out here (because I lost the query), but there is no issue with whitespace. The issue, moreso, is with the weird quotation marks and other special characters that are in the text fields. The publisher column has a particular issue with this. I might go back later and look up how to remove special characters from strings.
 
 ### Changes to be Made
 - Use `ROW_NUMBER()` and order by `report_date` descending
@@ -171,11 +183,33 @@ Each column is going to have a high cardinality. You would think the `pub_year` 
 Biggest table by around ~16 million rows. The records date from January 1, 2020 to September 9, 2025. According to the source page, each record is a checkout record. Renewals are not included. The data is anonymized. The only "identifying" information there is is a checkout ID row. There were more columns in the original dataset; however, just downloading the checkout records from 2020-2025 with 3 less columns already was taking up ~5 GB of the 10 GB database limit on SQL Server Management Studio (I have Express edition).
 
 ### 1. Checking Duplicates
+```sql
+SELECT
+      id
+    , bibnum
+    , item_type
+    , collection
+    , item_title
+    , checkout_datetime
+FROM bronze.checkouts
+GROUP BY id, bibnum, item_type, collection, item_title, checkout_datetime
+HAVING COUNT(*) > 1
+;
+```
+The expectation is that every row is distinct because checkout ID should be unique. There can only be one item per checkout ID. Oddly enough, there are a few duplicate records. I don't know what this indicates as there isn't anything on the source page about this. I am unaware what is different about the records that makes it distinct from one another. My assumption is that either it was an import mistake or the checkout reader in the libraries made a mistake by adding another copy of a checkout record. Regardless, I opted to remove the duplicate records while loading into the silver tables.
 
 ### 2. Checking for Null Values
+There weren't any `NULL` values if I recall. I'll have to check back later.
 
 ### 3. Checking Cardinality
+The number of checkout IDs should match the number of rows in the dataset (excluding duplicate rows). We would expect the number of unique items to be equal to or less than the number of items in the inventory table. The type and collection keys should have unique values ranging from 100-700, which is considerably low compared to the number of items.
 
 ### 4. Checking Size of Columns
+Can't convert the checkout ID into BIGINT because it overflows, so it has to remain `NVARCHAR()`. The only worry for a big column size would be title, but since we already have the `BibNum` column we can remove the `item_title` column when loading. `checkout_year` isn't necessary because we also have the `checkout_datetime`. I can't imagine grouping by year all too much.
 
 ### 5. Checking for Whitespace
+No issues with whitespace
+
+### Changes to be Made
+- Remove `item_title` column when loading
+- Reduce size of columns
