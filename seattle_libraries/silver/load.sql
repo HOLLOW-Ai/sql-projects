@@ -85,3 +85,36 @@ SELECT
 	, age_group
 FROM cte_dictionary
 ;
+
+-- silver.checkout_records
+WITH dedupe_checkouts AS (
+SELECT
+	  id
+	, checkout_year
+	, bibnum
+	, item_type
+	, collection
+	, item_title
+	, checkout_datetime
+FROM bronze.checkouts
+GROUP BY id, checkout_year, bibnum, item_type, collection, item_title, checkout_datetime
+)
+INSERT INTO silver.checkout_records (
+	  id
+	, checkout_year
+	, bibnum
+	, item_type
+	, collection
+	, item_title
+	, checkout_datetime
+)
+SELECT
+	  id
+	, checkout_year
+	, bibnum
+	, item_type
+	, collection
+	, item_title
+	, checkout_datetime
+FROM dedupe_checkouts
+;
