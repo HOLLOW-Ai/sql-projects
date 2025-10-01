@@ -283,19 +283,23 @@ DROP INDEX idx_bibnum ON ##item_col_pairs;
 SELECT
 	  col_key
 	, 
+	-- 5. Return the collection key that had the most items in its own collection that overlapped with the current row, or collection we're comparing to, in T1
 	(SELECT col_key
 	FROM (
+		-- 4. Group by the collection key that should not be the same as the current row, and count the number of items using the Bibnum or * and rank DESC -- T5
 		SELECT col_key
 		--, COUNT(*) AS test 		-- if i decide to calculate the perc of overlap might add this back later
-		, ROW_NUMBER() OVER (ORDER BY COUNT(*)) AS rnk
+		, ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) AS rnk
 		FROM 
 			(
+				-- 3. Grab the collection key and Bibnum of an item if a row does exist in the WHERE EXISTS clause -- T4
 				SELECT col_key, bibnum
 				FROM ##item_col_pairs T3
 				WHERE EXISTS (
-								
+								-- 2. Does there exist a row where we find an item's Bibnum in a collection that is different from the current row of T1, the outermost query
 								SELECT 1 FROM
 									(
+									-- 1. For every item that is in the same collection of the row we are looking at in T1, grab the BibNum of that item -- t
 									-- Get all the associated items with the col_key the row it is currently on
 									SELECT bibnum
 									FROM ##item_col_pairs T2
@@ -303,7 +307,6 @@ SELECT
 									) t
 								WHERE T3.bibnum = t.bibnum
 								AND T3.col_key != T1.col_key
-
 							)
 				--AND T3.col_key != T1.col_key
 			) T4
