@@ -275,8 +275,77 @@ INSERT INTO ##item_col_pairs (bibnum, col_key)
 		FROM ##checkouts
 		GROUP BY bibnum, col_key;
 
-CREATE NONCLUSTERED INDEX idx_bibnum ON ##item_col_pairs (bibnum);
-DROP INDEX idx_bibnum ON ##item_col_pairs;
+/*
+	=========================================================
+	Before Indexes
+	=========================================================
+	
+	* CPU = 32,532 ms
+	* Elapsed = 32,860 ms
+	* Logical Reads = 2.8M+
+
+	Overall, 34 seconds to execute
+
+	=========================================================
+	Index Creation
+	=========================================================
+	
+	Index 1:
+	CREATE INDEX IX_Bibnum ON ##item_col_pairs (bibnum);
+	DROP INDEX IX_Bibnum ON ##item_col_pairs;
+
+	* CPU = 4,094 ms
+	* Elapsed = 4,168 ms
+	* Logical Reads = 4,302,663
+
+	----------------------------------------------------------------------------
+
+	Index 2:
+	CREATE INDEX IX_ColKey_Bibnum ON ##item_col_pairs (col_key, bibnum);
+	DROP INDEX IX_ColKey_Bibnum ON ##item_col_pairs;
+
+	Doesn't change much. We get bad estimates and it still takes 34s. Also doing IX_ColKey_Includes also sucks dont do it
+	* CPU = 34,125 ms
+	* Elapsed = 34,447 ms
+	* Logical Reads = 537,241
+
+	----------------------------------------------------------------------------
+
+	Index 3:
+	CREATE INDEX IX_Bibnum_ColKey ON ##item_col_pairs (bibnum, col_key);
+	DROP INDEX IX_Bibnum_ColKey ON ##item_col_pairs;
+
+	Execution = 3 seconds
+	* CPU = 3,234 ms
+	* Elapsed = 3,307 ms
+	* Logical Reads = 4.9M+
+
+	----------------------------------------------------------------------------
+
+	Index 4: Creating separate indexes
+	CREATE INDEX IX_Bibnum ON ##item_col_pairs (bibnum);
+	CREATE INDEX IX_ColKey ON ##item_col_pairs (col_key);
+
+	DROP INDEX IX_Bibnum ON ##item_col_pairs;
+	DROP INDEX IX_ColKey ON ##item_col_pairs;
+
+	Execution = 4 seconds
+	* CPU = 3,875 ms
+	* Elapsed = 3,959 ms
+	* Logical Reads = 6M+
+
+	----------------------------------------------------------------------------
+
+	Index 5:
+	CREATE INDEX IX_Bibnum_Includes ON ##item_col_pairs (bibnum)
+		INCLUDE (col_key);
+	DROP INDEX IX_Bibnum_Includes ON ##item_col_pairs;
+
+	Execution = 3 seconds
+	* CPU = 3,203 ms
+	* Elapsed = 3,289 ms
+	* Logical Reads = 4.9M+
+*/
 
 -- Incredible. Racking my head wondering how to improve execution time from 34s, and then added a NCL index on the bibnum of the temp table
 -- Runtime is 4 seconds now
