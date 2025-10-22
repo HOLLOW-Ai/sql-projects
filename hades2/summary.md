@@ -1,1 +1,9 @@
-# Fill in when I have the chance
+# Introduction
+
+## Context
+
+## Purpose
+
+# Insights
+
+# Conclusion
