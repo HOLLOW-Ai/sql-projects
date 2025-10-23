@@ -8,11 +8,13 @@ GO
 CREATE SCHEMA gold;
 GO
 
+DROP TABLE IF EXISTS bronze.run_log;
 CREATE TABLE bronze.run_log (
   night INT,
   world NVARCHAR(15),
+  weapon NVARCHAR(25),
   familiar NVARCHAR(10),
-  time NVARCHAR(20),  -- In the format MM:SS.ff; check using CAST()
+  [time] NVARCHAR(20), 
   outcome NVARCHAR(15),
   killed_in NVARCHAR(50),
   slain_by NVARCHAR(20),
