@@ -3,7 +3,7 @@ CREATE TABLE silver.run_log (
   world NVARCHAR(15),
   weapon NVARCHAR(20),
   familiar NVARCHAR(10),
-  [time] NVARCHAR(15),
+  recorded_time NVARCHAR(15),
   [minutes] INT,
   seconds INT,
   milliseconds INT,
@@ -42,7 +42,7 @@ CREATE TABLE silver.arcana_log (
 CREATE TABLE silver.boon_log (
   night INT,
   origin NVARCHAR(20),
-  name NVARCHAR(20),
+  char_name NVARCHAR(20),
   effect NVARCHAR(15),
   boon NVARCHAR(50)
 );
