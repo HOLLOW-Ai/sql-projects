@@ -38,6 +38,10 @@ BEGIN
 
 	---------------------------------------------------------------------
 
+	PRINT '>> Dropping Foreign Keys: silver.keepsake_log';
+	ALTER TABLE silver.keepsake_log
+	DROP CONSTRAINT FK_night_keepsake;
+
 	PRINT '>> Truncating Table: silver.keepsake_log';
 	TRUNCATE TABLE silver.keepsake_log;
 
@@ -48,7 +52,16 @@ BEGIN
 		, keepsake_num
 	FROM bronze.keepsake_log;
 
+	PRINT '>> Adding Foreign Keys: silver.keepsake_log';
+	ALTER TABLE silver.keepsake_log
+	ADD CONSTRAINT FK_night_keepsake
+	FOREIGN KEY (night) REFERENCES silver.run_log (night);
+
 	---------------------------------------------------------------------
+
+	PRINT '>> Dropping Foreign Keys: silver.weapon_log';
+	ALTER TABLE silver.weapon_log
+	DROP CONSTRAINT FK_night_weapon;
 
 	PRINT '>> Truncating Table: silver.weapon_log';
 	TRUNCATE TABLE silver.weapon_log;
@@ -61,7 +74,16 @@ BEGIN
 		, TRIM(upgrade) AS upgrade
 	FROM bronze.weapon_log;
 
+	PRINT '>> Adding Foreign Keys: silver.weapon_log';
+	ALTER TABLE silver.weapon_log
+	ADD CONSTRAINT FK_night_weapon
+	FOREIGN KEY (night) REFERENCES silver.run_log (night);
+
 	---------------------------------------------------------------------
+
+	PRINT '>> Dropping Foreign Keys: silver.vow_log';
+	ALTER TABLE silver.vow_log
+	DROP CONSTRAINT FK_night_vow;
 
 	PRINT '>> Truncating Table: silver.vow_log';
 	TRUNCATE TABLE silver.vow_log;
@@ -72,7 +94,16 @@ BEGIN
 		, TRIM(vow) AS vow
 	FROM bronze.vow_log;
 
+	PRINT '>> Adding Foreign Keys: silver.vow_log';
+	ALTER TABLE silver.vow_log
+	ADD CONSTRAINT FK_night_vow
+	FOREIGN KEY (night) REFERENCES silver.run_log (night);
+
 	---------------------------------------------------------------------
+
+	PRINT '>> Dropping Foreign Keys: silver.arcana_log';
+	ALTER TABLE silver.arcana_log
+	DROP CONSTRAINT FK_night_arcana;
 
 	PRINT '>> Truncating Table: silver.arcana_log';
 	TRUNCATE TABLE silver.arcana_log;
@@ -84,7 +115,16 @@ BEGIN
 		, grasp
 	FROM bronze.arcana_log;
 
+	PRINT '>> Adding Foreign Keys: silver.arcana_log';
+	ALTER TABLE silver.arcana_log
+	ADD CONSTRAINT FK_night_arcana
+	FOREIGN KEY (night) REFERENCES silver.run_log (night);
+
 	---------------------------------------------------------------------
+
+	PRINT '>> Dropping Foreign Keys: silver.boon_log';
+	ALTER TABLE silver.boon_log
+	DROP CONSTRAINT FK_night_boon;
 
 	PRINT '>> Truncating Table: silver.boon_log';
 	TRUNCATE TABLE silver.boon_log;
@@ -97,5 +137,10 @@ BEGIN
 		, TRIM(effect) AS effect
 		, TRIM(boon) AS boon
 	FROM bronze.boon_log;
+
+	PRINT '>> Adding Foreign Keys: silver.boon_log';
+	ALTER TABLE silver.boon_log
+	ADD CONSTRAINT FK_night_boon
+	FOREIGN KEY (night) REFERENCES silver.run_log (night);
 
 END
