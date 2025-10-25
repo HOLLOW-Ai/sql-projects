@@ -3,8 +3,12 @@ AS
 BEGIN
 
 	PRINT '====================';
-	PRINT 'Loading Bronze Layer';
+	PRINT 'Loading Silver Layer';
 	PRINT '====================';
+
+	PRINT '>> Dropping Primary Keys: silver.run_log';
+	ALTER TABLE silver.run_log
+	DROP CONSTRAINT PK_night;
 
 	PRINT '>> Truncating Table: silver.run_log';
 	TRUNCATE TABLE silver.run_log;
@@ -27,6 +31,10 @@ BEGIN
 		, fear
 		, TRIM(run_type) AS run_type
 	FROM bronze.run_log;
+
+	PRINT '>> Adding Primary Keys: silver.run_log';
+	ALTER TABLE silver.run_log
+	ADD CONSTRAINT PK_night PRIMARY KEY (night);
 
 	---------------------------------------------------------------------
 
@@ -77,6 +85,7 @@ BEGIN
 	FROM bronze.arcana_log;
 
 	---------------------------------------------------------------------
+
 	PRINT '>> Truncating Table: silver.boon_log';
 	TRUNCATE TABLE silver.boon_log;
 
